@@ -1,0 +1,48 @@
+# ── Privacidade do Samuel (menor de idade) ─────────────────────────
+# Fotos, desenhos fotografados e áudios dele NUNCA vão para o repositório.
+dados-samuel/
+
+# Áudio (gravações de voz)
+*.m4a
+*.mp3
+*.wav
+*.ogg
+*.opus
+*.aac
+*.flac
+*.webm
+*.caf
+*.amr
+
+# Fotos e imagens de câmera
+*.jpg
+*.jpeg
+*.heic
+*.heif
+*.png
+*.webp
+*.dng
+*.raw
+
+# Vídeo
+*.mp4
+*.mov
+
+# Exceção: imagens que podem ser públicas (diagramas, prints da interface,
+# texturas geradas sem dados pessoais) vão nesta pasta.
+!assets-publicos/
+!assets-publicos/**
+
+# ── Segredos e ambiente ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Sistema e ferramentas ──────────────────────────────────────────
+.DS_Store
+node_modules/
+.next/
+dist/
+build/
+__pycache__/
+.venv/
