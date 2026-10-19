@@ -10,7 +10,7 @@
 
 | Pasta | O que tem | Para quê |
 |---|---|---|
-| `1-Entregas/` | **PF0** (PDF da caixa, 6 páginas) e **PF1** (slides do pitch, 8 slides) | é o que sobe no Classroom |
+| `1-Entregas/` | **PF0** (PDF da caixa, 6 páginas) e **PF1** (slides do pitch, 8 slides, em **PPTX editável**, com as falas nas notas do apresentador, e em **PDF**) | apresentar (PPTX) e subir no Classroom (PDF) |
 | `2-Pitch/` | **Falas de cada slide**, respostas às perguntas difíceis, estrutura do pitch e campos para a planilha | para ensaiar e preencher a planilha |
 | `3-Processo-PF0/` | A caixa e as 20 combinações; o que já existe; as ideias derrubadas; a escolha | para entender como chegamos na ideia |
 | `4-Plano-tecnico/` | Tecnologias, garantias, cronograma até 17/11 e o que cortar | base da parte "como vai ser feita" |
