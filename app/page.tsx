@@ -135,6 +135,7 @@ export default function Home() {
   const [erro, setErro] = useState<string | null>(null);
   const [historiaErro, setHistoriaErro] = useState<string | null>(null);
   const [slideTutorial, setSlideTutorial] = useState(0);
+  const [celebrando, setCelebrando] = useState(false);
   const [primeiroParaDialogo, setPrimeiroParaDialogo] = useState<Bicho | null>(null);
   const [dialogoFalas, setDialogoFalas] = useState<{autor: string; texto: string}[]>([]);
   const [dialogoCarregando, setDialogoCarregando] = useState(false);
@@ -375,7 +376,12 @@ export default function Home() {
     localStorage.setItem(CHAVE_BESTIARIO, JSON.stringify(novos));
     setSelecionado(novo);
     setEscolhida(null);
-    setEtapa("detalhe");
+    setCelebrando(true);
+    falar(`${novo.nome} nasceu! Que bicho incrível!`);
+    setTimeout(() => {
+      setCelebrando(false);
+      setEtapa("detalhe");
+    }, 2500);
     gerarSprite(novo);
   }
 
@@ -695,6 +701,28 @@ export default function Home() {
             <button onClick={() => setEtapa("gravacao")}>Contar de novo</button>
             <button onClick={novoBicho}>Redesenhar</button>
           </div>
+        </section>
+      )}
+
+      {celebrando && selecionado && (
+        <section className="celebracao">
+          <div className="confete-container">
+            {Array.from({ length: 20 }, (_, i) => (
+              <span
+                key={i}
+                className="confete"
+                style={{
+                  left: `${10 + (i * 4.2) % 80}%`,
+                  animationDelay: `${(i * 0.07) % 0.5}s`,
+                  background: ["#d4152f","#ffd700","#00c853","#2979ff","#ff6d00"][i % 5],
+                }}
+              />
+            ))}
+          </div>
+          <h2 className="cabecalho-bicho celebra-nome">{selecionado.nome} nasceu!</h2>
+          {selecionado.imagem_preview && (
+            <img className="celebra-img" src={selecionado.imagem_preview} alt={selecionado.nome} />
+          )}
         </section>
       )}
 
