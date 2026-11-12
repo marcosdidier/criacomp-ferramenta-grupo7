@@ -63,11 +63,16 @@ const CHAVE_BESTIARIO = "bestiario-samuel";
 const INSTRUCAO_BESTIARIO_VAZIO = "Oi! Desenha um bicho pra gente começar!";
 const INSTRUCAO_CAPTURA = "Coloca o desenho dentro do quadrado.";
 const INSTRUCAO_GRAVACAO = "Agora me conta como é o seu bicho! Segure o botão e fala.";
-const INSTRUCAO_CARREGANDO = "Seu bicho está nascendo...";
-const MENSAGEM_LENTA = "O bicho está demorando pra nascer, espera mais um pouquinho.";
+const ETAPAS_LOADING = [
+  "Escutando o que você falou...",
+  "Olhando o seu desenho...",
+  "Inventando três versões do bicho...",
+  "Pintando as cores de cada um...",
+  "Quase lá! Só mais um toque...",
+];
 const MENSAGEM_NAO_ENTENDI = "Hum, não entendi, me conta de novo?";
 const MENSAGEM_SERVIDOR = "O bestiário está dormindo, tenta daqui a pouco.";
-const TEMPO_LENTO_MS = 25000;
+// Loading agora usa passos visuais em vez de timer
 
 let vozAtual: HTMLAudioElement | null = null;
 let abortVoz: AbortController | null = null;
@@ -131,7 +136,8 @@ export default function Home() {
   const [versoes, setVersoes] = useState<Versao[]>([]);
   const [escolhida, setEscolhida] = useState<Versao | null>(null);
   const [gravando, setGravando] = useState(false);
-  const [lento, setLento] = useState(false);
+  // lento removido — loading agora usa passos visuais
+  const [passoLoading, setPassoLoading] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [historiaErro, setHistoriaErro] = useState<string | null>(null);
   const [slideTutorial, setSlideTutorial] = useState(0);
@@ -177,14 +183,12 @@ export default function Home() {
 
   useEffect(() => {
     if (etapa === "gravacao") falar(INSTRUCAO_GRAVACAO);
-    if (etapa === "carregando") falar(INSTRUCAO_CARREGANDO);
+    // loading voice handled by processar()
   }, [etapa]);
 
   useEffect(() => {
     if (etapa !== "carregando") return;
-    setLento(false);
-    const timer = setTimeout(() => setLento(true), TEMPO_LENTO_MS);
-    return () => clearTimeout(timer);
+    setPassoLoading(0);
   }, [etapa]);
 
   function novoBicho() {
@@ -208,8 +212,11 @@ export default function Home() {
 
   async function processar(audio: Blob) {
     setEtapa("carregando");
+    setPassoLoading(0);
     setErro(null);
     try {
+      // Passo 0: Transcrição
+      falar(ETAPAS_LOADING[0]);
       const form = new FormData();
       form.append("audio", new File([audio], "fala.webm", { type: audio.type }));
       const transcrito = await fetch("/api/transcrever", { method: "POST", headers: authHeaders(), body: form });
@@ -222,6 +229,9 @@ export default function Home() {
         return;
       }
 
+      // Passo 1-2: Interpretação
+      setPassoLoading(1);
+      falar(ETAPAS_LOADING[1]);
       const interpretado = await fetch("/api/interpretar", {
         method: "POST",
         headers: authHeaders({ "Content-Type": "application/json" }),
@@ -229,7 +239,12 @@ export default function Home() {
       });
       if (!interpretado.ok) throw new Error("servidor");
       const dados = await interpretado.json();
+      if (!dados.versoes?.length) throw new Error("servidor");
 
+      // Passo 3: Geração de imagens
+      setPassoLoading(2);
+      falar(ETAPAS_LOADING[2]);
+      setPassoLoading(3);
       const versoesComImagem = await Promise.all(
         (dados.versoes as Versao[]).map(async (v) => {
           try {
@@ -247,8 +262,10 @@ export default function Home() {
         }),
       );
 
+      setPassoLoading(4);
       setTranscricao(texto);
       setVersoes(versoesComImagem);
+      falar("Pronto! Escolhe o seu favorito!");
       setEtapa("escolha");
     } catch {
       setErro(MENSAGEM_SERVIDOR);
@@ -478,13 +495,19 @@ export default function Home() {
       {etapa === "bestiario" && (
         <section>
           {bichos.length === 0 ? (
-            <p>{INSTRUCAO_BESTIARIO_VAZIO}</p>
+            <div className="bestiario-vazio">
+              <div className="slide-ilustracao slide-desenha" />
+              <h2 className="cabecalho-bicho">Seu bestiário está vazio!</h2>
+              <p className="subtitulo">Desenha um bicho no papel, tira uma foto e conta pra gente como ele é. A IA vai dar vida a ele!</p>
+            </div>
           ) : (
             <div className="cartas">
               {bichos.map((b) => (
                 <button key={b.id} className="carta" onClick={() => abrirBicho(b)}>
                   {b.sprite ? (
                     <img src={b.sprite} alt={b.nome} className="sprite-img" />
+                  ) : b.imagem_preview ? (
+                    <img src={b.imagem_preview} alt={b.nome} />
                   ) : (
                     <img className={b.spriteFallback ? "silhueta" : ""} src={b.foto} alt={b.nome} />
                   )}
@@ -651,10 +674,17 @@ export default function Home() {
       )}
 
       {etapa === "carregando" && (
-        <section>
+        <section className="tela-loading">
           <div className="ovo" />
+          <div className="loading-passos">
+            {ETAPAS_LOADING.map((msg, i) => (
+              <div key={i} className={`loading-passo ${i < passoLoading ? "feito" : i === passoLoading ? "ativo" : ""}`}>
+                <span className="loading-icone">{i < passoLoading ? "\u2713" : i === passoLoading ? "\u25CF" : "\u25CB"}</span>
+                <span>{msg}</span>
+              </div>
+            ))}
+          </div>
           <div className="progresso"><span /></div>
-          <p>{lento ? MENSAGEM_LENTA : INSTRUCAO_CARREGANDO}</p>
         </section>
       )}
 

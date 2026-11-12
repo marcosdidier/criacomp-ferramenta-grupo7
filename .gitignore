@@ -46,3 +46,5 @@ dist/
 build/
 __pycache__/
 .venv/
+.vercel
+.env*

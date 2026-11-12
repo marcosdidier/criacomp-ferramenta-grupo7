@@ -397,6 +397,67 @@ button.link {
   font-weight: 500;
 }
 
+/* ── Loading com passos ───────────────────────────── */
+
+.tela-loading {
+  min-height: 50vh;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-passos {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.loading-passo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  color: #c0bfb8;
+  transition: color 0.4s, transform 0.3s;
+}
+
+.loading-passo.ativo {
+  color: var(--preto);
+  font-weight: 600;
+  transform: translateX(4px);
+}
+
+.loading-passo.feito {
+  color: var(--texto-secundario);
+}
+
+.loading-icone {
+  font-size: 0.85rem;
+  min-width: 18px;
+  text-align: center;
+}
+
+.loading-passo.feito .loading-icone {
+  color: #00c853;
+}
+
+.loading-passo.ativo .loading-icone {
+  color: var(--vermelho);
+  animation: pulsa 1s ease-in-out infinite;
+}
+
+/* ── Bestiário vazio ──────────────────────────────── */
+
+.bestiario-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 0;
+  text-align: center;
+}
+
 /* ── Escolha com imagem ───────────────────────────── */
 
 .escolha-cartas {
