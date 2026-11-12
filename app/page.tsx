@@ -205,10 +205,13 @@ export default function Home() {
     const video = videoRef.current;
     if (!video) return;
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
-    setFoto(canvas.toDataURL("image/jpeg", 0.9));
+    // Reduz resolução para caber no limite do serverless (max 800px no lado maior)
+    const maxLado = 800;
+    const escala = Math.min(maxLado / video.videoWidth, maxLado / video.videoHeight, 1);
+    canvas.width = Math.round(video.videoWidth * escala);
+    canvas.height = Math.round(video.videoHeight * escala);
+    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    setFoto(canvas.toDataURL("image/jpeg", 0.7));
   }
 
   async function processar(audio: Blob) {
@@ -268,7 +271,8 @@ export default function Home() {
       setVersoes(versoesComImagem);
       falar("Pronto! Escolhe o seu favorito!");
       setEtapa("escolha");
-    } catch {
+    } catch (e) {
+      console.error("processar falhou:", e);
       setErro(MENSAGEM_SERVIDOR);
       falar(MENSAGEM_SERVIDOR);
       setEtapa("gravacao");
