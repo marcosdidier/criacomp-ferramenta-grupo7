@@ -135,6 +135,9 @@ export default function Home() {
   const [erro, setErro] = useState<string | null>(null);
   const [historiaErro, setHistoriaErro] = useState<string | null>(null);
   const [slideTutorial, setSlideTutorial] = useState(0);
+  const [primeiroParaDialogo, setPrimeiroParaDialogo] = useState<Bicho | null>(null);
+  const [dialogoFalas, setDialogoFalas] = useState<{autor: string; texto: string}[]>([]);
+  const [dialogoCarregando, setDialogoCarregando] = useState(false);
   const gerandoHistoria = useRef(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -381,6 +384,46 @@ export default function Home() {
     setEtapa("detalhe");
   }
 
+  async function gerarDialogo(b1: Bicho, b2: Bicho) {
+    const chave = `dialogo-${[b1.id, b2.id].sort().join("--")}`;
+    const cached = localStorage.getItem(chave);
+    if (cached) {
+      setDialogoFalas(JSON.parse(cached));
+      return;
+    }
+    setDialogoCarregando(true);
+    try {
+      const resp = await fetch("/api/dialogo", {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          bicho1: { nome: b1.nome, comportamentos: b1.comportamentos, bioma: b1.bioma },
+          bicho2: { nome: b2.nome, comportamentos: b2.comportamentos, bioma: b2.bioma },
+        }),
+      });
+      if (!resp.ok) throw new Error("servidor");
+      const { falas } = await resp.json();
+      localStorage.setItem(chave, JSON.stringify(falas));
+      setDialogoFalas(falas);
+    } catch {
+      setDialogoFalas([]);
+    } finally {
+      setDialogoCarregando(false);
+    }
+  }
+
+  function toqueZoo(bicho: Bicho) {
+    if (primeiroParaDialogo && primeiroParaDialogo.id !== bicho.id) {
+      gerarDialogo(primeiroParaDialogo, bicho);
+      setPrimeiroParaDialogo(null);
+    } else if (primeiroParaDialogo?.id === bicho.id) {
+      setPrimeiroParaDialogo(null);
+      abrirBicho(bicho);
+    } else {
+      setPrimeiroParaDialogo(bicho);
+    }
+  }
+
   return (
     <main>
       <h1>O bestiário do Samuel</h1>
@@ -488,9 +531,18 @@ export default function Home() {
       {etapa === "zoologico" && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={() => setEtapa("bestiario")}>‹ Bestiário</button>
+            <button className="link" onClick={() => { setEtapa("bestiario"); setPrimeiroParaDialogo(null); setDialogoFalas([]); }}>&#8249; Bestiário</button>
             <span>{bichos.length} criaturas</span>
           </div>
+          {primeiroParaDialogo && (
+            <div className="dialogo-instrucao">
+              <p>Toca em outro bicho pra eles conversarem!</p>
+              <button className="link" onClick={() => setPrimeiroParaDialogo(null)}>Cancelar</button>
+            </div>
+          )}
+          {dialogoCarregando && (
+            <p className="subtitulo">Os bichos estão pensando no que falar...</p>
+          )}
           {Object.entries(
             bichos.reduce<Record<string, Bicho[]>>((grupos, b) => {
               const chave = b.bioma?.trim() || "Ainda sem bioma";
@@ -502,9 +554,15 @@ export default function Home() {
               <h2>{bioma}</h2>
               <div className="cartas">
                 {lista.map((b) => (
-                  <button key={b.id} className={`carta ${classeAnimacao(b.comportamentos)}`} onClick={() => abrirBicho(b)}>
+                  <button
+                    key={b.id}
+                    className={`carta ${classeAnimacao(b.comportamentos)}${primeiroParaDialogo?.id === b.id ? " dialogo-selecionada" : ""}`}
+                    onClick={() => toqueZoo(b)}
+                  >
                     {b.sprite ? (
                       <img src={b.sprite} alt={b.nome} className="sprite-img" />
+                    ) : b.imagem_preview ? (
+                      <img src={b.imagem_preview} alt={b.nome} />
                     ) : (
                       <img className={b.spriteFallback ? "silhueta" : ""} src={b.foto} alt={b.nome} />
                     )}
@@ -514,6 +572,19 @@ export default function Home() {
               </div>
             </div>
           ))}
+          {dialogoFalas.length > 0 && (
+            <div className="dialogo-overlay" onClick={() => setDialogoFalas([])}>
+              <div className="dialogo-baloes" onClick={(e) => e.stopPropagation()}>
+                {dialogoFalas.map((f, i) => (
+                  <div key={i} className={`balao ${f.autor === dialogoFalas[0].autor ? "esquerda" : "direita"}`}>
+                    <span className="balao-autor">{f.autor}</span>
+                    <span className="balao-texto">{f.texto}</span>
+                  </div>
+                ))}
+                <button className="link" onClick={() => setDialogoFalas([])}>Fechar</button>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
