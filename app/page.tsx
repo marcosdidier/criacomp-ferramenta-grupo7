@@ -2,10 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Etapa = "captura" | "gravacao" | "pronto";
+type Etapa = "captura" | "gravacao" | "carregando" | "escolha" | "escolhido";
+
+type Versao = {
+  nome: string;
+  corpo: string;
+  cores: string[];
+  comportamentos: string[];
+  prompt_sprite: string;
+};
 
 const INSTRUCAO_CAPTURA = "Coloca o desenho dentro do quadrado.";
 const INSTRUCAO_GRAVACAO = "Agora me conta como é o seu bicho! Segure o botão e fala.";
+const INSTRUCAO_CARREGANDO = "Seu bicho está nascendo...";
 
 async function falar(texto: string) {
   const resposta = await fetch("/api/falar", {
@@ -21,7 +30,9 @@ async function falar(texto: string) {
 export default function Home() {
   const [etapa, setEtapa] = useState<Etapa>("captura");
   const [foto, setFoto] = useState<string | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [transcricao, setTranscricao] = useState<string | null>(null);
+  const [versoes, setVersoes] = useState<Versao[]>([]);
+  const [escolhida, setEscolhida] = useState<Versao | null>(null);
   const [gravando, setGravando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -45,6 +56,7 @@ export default function Home() {
 
   useEffect(() => {
     if (etapa === "gravacao") falar(INSTRUCAO_GRAVACAO);
+    if (etapa === "carregando") falar(INSTRUCAO_CARREGANDO);
   }, [etapa]);
 
   function tirarFoto() {
@@ -57,6 +69,33 @@ export default function Home() {
     setFoto(canvas.toDataURL("image/jpeg", 0.9));
   }
 
+  async function processar(audio: Blob) {
+    setEtapa("carregando");
+    setErro(null);
+    try {
+      const form = new FormData();
+      form.append("audio", new File([audio], "fala.webm", { type: audio.type }));
+      const transcrito = await fetch("/api/transcrever", { method: "POST", body: form });
+      const { texto } = await transcrito.json();
+      if (!transcrito.ok) throw new Error(texto ?? "falha na transcrição");
+
+      const interpretado = await fetch("/api/interpretar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ foto, transcricao: texto }),
+      });
+      const dados = await interpretado.json();
+      if (!interpretado.ok) throw new Error(dados.erro ?? "falha na interpretação");
+
+      setTranscricao(texto);
+      setVersoes(dados.versoes);
+      setEtapa("escolha");
+    } catch (e) {
+      setErro(`Algo deu errado: ${e instanceof Error ? e.message : "erro desconhecido"}`);
+      setEtapa("gravacao");
+    }
+  }
+
   async function iniciarGravacao() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -65,9 +104,8 @@ export default function Home() {
       recorder.ondataavailable = (e) => trechosRef.current.push(e.data);
       recorder.onstop = () => {
         const blob = new Blob(trechosRef.current, { type: recorder.mimeType });
-        setAudioUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach((t) => t.stop());
-        setEtapa("pronto");
+        processar(blob);
       };
       recorder.start();
       recorderRef.current = recorder;
@@ -78,12 +116,15 @@ export default function Home() {
   }
 
   function pararGravacao() {
-    recorderRef.current?.stop();
+    if (!recorderRef.current || recorderRef.current.state === "inactive") return;
+    recorderRef.current.stop();
     setGravando(false);
   }
 
   function refazerFoto() {
     setFoto(null);
+    setVersoes([]);
+    setEscolhida(null);
     setEtapa("captura");
   }
 
@@ -131,16 +172,43 @@ export default function Home() {
         </section>
       )}
 
-      {etapa === "pronto" && (
+      {etapa === "carregando" && (
         <section>
-          <p>Gravação pronta.</p>
-          {audioUrl && <audio controls src={audioUrl} />}
-          <div>
-            <button onClick={() => { setAudioUrl(null); setEtapa("gravacao"); }}>
-              Gravar de novo
-            </button>
-            <button onClick={refazerFoto}>Começar outro bicho</button>
-          </div>
+          <p>{INSTRUCAO_CARREGANDO}</p>
+        </section>
+      )}
+
+      {etapa === "escolha" && (
+        <section>
+          <p>Olha só! Nasceram três bichos. Qual você escolhe?</p>
+          {transcricao && <p>Você disse: &ldquo;{transcricao}&rdquo;</p>}
+          <ul>
+            {versoes.map((v) => (
+              <li key={v.nome}>
+                <h2>{v.nome}</h2>
+                <p>Corpo: {v.corpo}</p>
+                <p>Cores: {v.cores.join(", ")}</p>
+                <p>Comportamentos: {v.comportamentos.join(", ")}</p>
+                <button
+                  onClick={() => {
+                    setEscolhida(v);
+                    setEtapa("escolhido");
+                  }}
+                >
+                  Escolher {v.nome}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button onClick={refazerFoto}>Redesenhar</button>
+        </section>
+      )}
+
+      {etapa === "escolhido" && escolhida && (
+        <section>
+          <h2>{escolhida.nome} entrou no bestiário!</h2>
+          <p>O sprite animado ainda não está ligado nesta tela.</p>
+          <button onClick={refazerFoto}>Começar outro bicho</button>
         </section>
       )}
     </main>
