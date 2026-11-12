@@ -9,7 +9,9 @@ type Etapa =
   | "gravacao"
   | "carregando"
   | "escolha"
-  | "detalhe";
+  | "detalhe"
+  | "carta"
+  | "historia";
 
 type Versao = {
   nome: string;
@@ -20,7 +22,12 @@ type Versao = {
   prompt_sprite: string;
 };
 
-type Bicho = Versao & { id: string; foto: string };
+type Bicho = Versao & {
+  id: string;
+  foto: string;
+  transcricao?: string;
+  historia?: string;
+};
 
 const CHAVE_BESTIARIO = "bestiario-samuel";
 const INSTRUCAO_BESTIARIO_VAZIO = "Oi! Desenha um bicho pra gente começar!";
@@ -66,6 +73,8 @@ export default function Home() {
   const [gravando, setGravando] = useState(false);
   const [lento, setLento] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [historiaErro, setHistoriaErro] = useState<string | null>(null);
+  const gerandoHistoria = useRef(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -186,9 +195,71 @@ export default function Home() {
     setGravando(false);
   }
 
+  function atualizarBicho(atualizado: Bicho) {
+    setBichos((anteriores) => {
+      const novos = anteriores.map((b) => (b.id === atualizado.id ? atualizado : b));
+      localStorage.setItem(CHAVE_BESTIARIO, JSON.stringify(novos));
+      return novos;
+    });
+    setSelecionado(atualizado);
+  }
+
+  useEffect(() => {
+    if (etapa !== "historia" || !selecionado || selecionado.historia || gerandoHistoria.current) return;
+    gerandoHistoria.current = true;
+    setHistoriaErro(null);
+    fetch("/api/historia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome: selecionado.nome,
+        corpo: selecionado.corpo,
+        bioma: selecionado.bioma,
+        comportamentos: selecionado.comportamentos,
+        transcricao: selecionado.transcricao,
+      }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("servidor");
+        return r.json();
+      })
+      .then(({ historia }) => atualizarBicho({ ...selecionado, historia }))
+      .catch(() => setHistoriaErro(MENSAGEM_SERVIDOR))
+      .finally(() => {
+        gerandoHistoria.current = false;
+      });
+  }, [etapa, selecionado]);
+
+  function salvarCarta() {
+    if (!selecionado) return;
+    const imagem = new Image();
+    imagem.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 1000;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(imagem, 60, 60, 680, 560);
+      ctx.fillStyle = "#161616";
+      ctx.font = "bold 64px system-ui, sans-serif";
+      ctx.fillText(selecionado.nome, 60, 720);
+      ctx.font = "32px system-ui, sans-serif";
+      ctx.fillStyle = "#5c5c5c";
+      ctx.fillText(selecionado.corpo.slice(0, 40), 60, 790);
+      if (selecionado.bioma) ctx.fillText(selecionado.bioma, 60, 840);
+      const link = document.createElement("a");
+      link.download = `${selecionado.nome}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+    imagem.src = selecionado.foto;
+  }
+
   function escolher(versao: Versao) {
     if (!foto) return;
-    const novo: Bicho = { ...versao, id: crypto.randomUUID(), foto };
+    const novo: Bicho = { ...versao, id: crypto.randomUUID(), foto, transcricao: transcricao ?? undefined };
     const novos = [...bichos, novo];
     setBichos(novos);
     localStorage.setItem(CHAVE_BESTIARIO, JSON.stringify(novos));
@@ -369,10 +440,53 @@ export default function Home() {
               <span key={c} className="tag">{c}</span>
             ))}
           </div>
-          <p className="subtitulo">O sprite animado ainda não está ligado nesta tela.</p>
           <div className="botoes">
+            <button onClick={() => setEtapa("carta")}>Ver carta</button>
+            <button onClick={() => setEtapa("historia")}>História</button>
+          </div>
+          <div className="botoes">
+            <button onClick={() => setEtapa("zoologico")}>Zoológico</button>
             <button className="primario" onClick={novoBicho}>Novo bicho</button>
           </div>
+        </section>
+      )}
+
+      {etapa === "carta" && selecionado && (
+        <section>
+          <div className="linha-voltar">
+            <button className="link" onClick={() => setEtapa("detalhe")}>‹ {selecionado.nome}</button>
+            <button className="link" onClick={() => window.print()}>Imprimir</button>
+          </div>
+          <div className="carta-print moldura-carta">
+            <img className="foto" src={selecionado.foto} alt={selecionado.nome} />
+            <h2 className="cabecalho-bicho">{selecionado.nome}</h2>
+            <p className="subtitulo">{selecionado.corpo}</p>
+            {selecionado.bioma && <p className="subtitulo">{selecionado.bioma}</p>}
+          </div>
+          <div className="botoes">
+            <button onClick={salvarCarta}>Salvar imagem</button>
+          </div>
+        </section>
+      )}
+
+      {etapa === "historia" && selecionado && (
+        <section>
+          <div className="linha-voltar">
+            <button className="link" onClick={() => setEtapa("detalhe")}>‹ {selecionado.nome}</button>
+          </div>
+          <h2 className="cabecalho-bicho">A história do {selecionado.nome}</h2>
+          {historiaErro && <p role="alert">{historiaErro}</p>}
+          {!selecionado.historia && !historiaErro && (
+            <p className="subtitulo">Contando a história...</p>
+          )}
+          {selecionado.historia && <p>{selecionado.historia}</p>}
+          {selecionado.transcricao && (
+            <div className="bloco-fala">
+              <span className="subtitulo">O que você contou</span>
+              <span>{selecionado.transcricao}</span>
+            </div>
+          )}
+          <p className="subtitulo">Criado com IA</p>
         </section>
       )}
     </main>
