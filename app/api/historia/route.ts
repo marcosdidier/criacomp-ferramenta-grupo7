@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { verificar } from "../_seguranca";
 
 export const runtime = "nodejs";
 
@@ -8,6 +9,9 @@ Use somente o que está na descrição (nome, corpo, bioma, comportamentos e o q
 Responda apenas com o texto da história, sem título e sem aspas.`;
 
 export async function POST(req: Request) {
+  const bloqueio = verificar(req);
+  if (bloqueio) return bloqueio;
+
   const { nome, corpo, bioma, comportamentos, transcricao } = (await req.json()) as {
     nome?: string;
     corpo?: string;

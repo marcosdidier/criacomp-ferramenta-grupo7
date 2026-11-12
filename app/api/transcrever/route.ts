@@ -1,8 +1,12 @@
 import OpenAI from "openai";
+import { verificar } from "../_seguranca";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  const bloqueio = verificar(req);
+  if (bloqueio) return bloqueio;
+
   const form = await req.formData();
   const audio = form.get("audio");
   if (!(audio instanceof File)) {

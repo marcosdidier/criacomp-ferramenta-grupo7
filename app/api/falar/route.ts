@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { verificar } from "../_seguranca";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,9 @@ Pronunciation: Clear and easy to follow for a child.
 Personality Affect: Playful, kind and a little silly. Makes the child feel that their drawing matters.`;
 
 export async function POST(req: Request) {
+  const bloqueio = verificar(req);
+  if (bloqueio) return bloqueio;
+
   const { texto } = (await req.json()) as { texto?: string };
   if (!texto) {
     return Response.json({ erro: "texto é obrigatório" }, { status: 400 });

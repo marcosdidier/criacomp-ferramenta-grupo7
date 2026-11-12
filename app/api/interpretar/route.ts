@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { verificar } from "../_seguranca";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,9 @@ function limparJSON(texto: string): string {
 }
 
 export async function POST(req: Request) {
+  const bloqueio = verificar(req);
+  if (bloqueio) return bloqueio;
+
   const { foto, transcricao } = (await req.json()) as {
     foto?: string;
     transcricao?: string;

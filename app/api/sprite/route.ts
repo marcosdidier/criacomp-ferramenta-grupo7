@@ -1,3 +1,5 @@
+import { verificar } from "../_seguranca";
+
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
@@ -43,6 +45,9 @@ async function esperar(taskId: string): Promise<Resultado> {
 }
 
 export async function POST(req: Request) {
+  const bloqueio = verificar(req);
+  if (bloqueio) return bloqueio;
+
   const { prompt = "", imagem, acao = "walking" } = (await req.json()) as {
     prompt?: string;
     imagem?: string;

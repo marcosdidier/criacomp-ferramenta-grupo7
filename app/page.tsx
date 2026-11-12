@@ -29,6 +29,12 @@ type Bicho = Versao & {
   historia?: string;
 };
 
+const APP_TOKEN = process.env.NEXT_PUBLIC_APP_SECRET ?? "";
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  return { "x-app-token": APP_TOKEN, ...extra };
+}
+
 const CHAVE_BESTIARIO = "bestiario-samuel";
 const INSTRUCAO_BESTIARIO_VAZIO = "Oi! Desenha um bicho pra gente começar!";
 const INSTRUCAO_CAPTURA = "Coloca o desenho dentro do quadrado.";
@@ -56,7 +62,7 @@ async function falar(texto: string) {
   try {
     const resposta = await fetch("/api/falar", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ texto }),
       signal: controller.signal,
     });
@@ -151,7 +157,7 @@ export default function Home() {
     try {
       const form = new FormData();
       form.append("audio", new File([audio], "fala.webm", { type: audio.type }));
-      const transcrito = await fetch("/api/transcrever", { method: "POST", body: form });
+      const transcrito = await fetch("/api/transcrever", { method: "POST", headers: authHeaders(), body: form });
       if (!transcrito.ok) throw new Error("servidor");
       const { texto } = await transcrito.json();
       if (!texto?.trim()) {
@@ -163,7 +169,7 @@ export default function Home() {
 
       const interpretado = await fetch("/api/interpretar", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ foto, transcricao: texto }),
       });
       if (!interpretado.ok) throw new Error("servidor");
@@ -220,7 +226,7 @@ export default function Home() {
     setHistoriaErro(null);
     fetch("/api/historia", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         nome: selecionado.nome,
         corpo: selecionado.corpo,
