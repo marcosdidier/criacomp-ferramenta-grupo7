@@ -450,6 +450,149 @@ button.link {
 .bioma[data-bioma-tipo="noite"]    { background: linear-gradient(135deg, #e0d8f0, #ede8f8); border-radius: var(--raio); padding: 16px; }
 .bioma[data-bioma-tipo="default"]  { background: var(--card); border-radius: var(--raio); padding: 16px; }
 
+/* ── Tutorial ─────────────────────────────────────── */
+
+.tutorial {
+  min-height: 70vh;
+  justify-content: center;
+  align-items: center;
+}
+
+.slide-ilustracao {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: var(--card);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-desenha::before {
+  content: "";
+  width: 90px;
+  height: 110px;
+  background: #fff;
+  border-radius: 8px;
+  position: absolute;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.08);
+}
+
+.slide-desenha::after {
+  content: "";
+  width: 6px;
+  height: 56px;
+  background: var(--vermelho);
+  border-radius: 3px;
+  position: absolute;
+  transform: rotate(-30deg) translate(18px, -8px);
+  animation: desenha-move 2s ease-in-out infinite;
+}
+
+@keyframes desenha-move {
+  0%, 100% { transform: rotate(-30deg) translate(18px, -8px); }
+  50% { transform: rotate(-30deg) translate(28px, -18px); }
+}
+
+.slide-conta::before {
+  content: "";
+  width: 40px;
+  height: 60px;
+  background: var(--texto-secundario);
+  border-radius: 20px 20px 8px 8px;
+  position: absolute;
+}
+
+.slide-conta::after {
+  content: "";
+  width: 80px;
+  height: 80px;
+  border: 3px solid var(--vermelho);
+  border-radius: 50%;
+  position: absolute;
+  opacity: 0;
+  animation: onda-mic 2s ease-out infinite;
+}
+
+@keyframes onda-mic {
+  0% { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.slide-escolhe::before {
+  content: "";
+  width: 50px;
+  height: 65px;
+  background: var(--card-destaque);
+  border: 2px solid var(--vermelho);
+  border-radius: 10px;
+  position: absolute;
+  transform: rotate(-8deg) translateX(-30px);
+}
+
+.slide-escolhe::after {
+  content: "";
+  width: 50px;
+  height: 65px;
+  background: var(--card-destaque);
+  border: 2px solid var(--vermelho);
+  border-radius: 10px;
+  position: absolute;
+  transform: rotate(8deg) translateX(30px);
+  animation: card-brilha 2s ease-in-out infinite;
+}
+
+@keyframes card-brilha {
+  0%, 100% { box-shadow: 0 0 0 transparent; }
+  50% { box-shadow: 0 0 16px rgba(212, 21, 47, 0.3); }
+}
+
+.slide-zoo::before {
+  content: "";
+  width: 30px;
+  height: 30px;
+  background: var(--vermelho);
+  border-radius: 50% 50% 50% 10%;
+  position: absolute;
+  animation: bicho-pula 1.6s ease-in-out infinite;
+}
+
+.slide-zoo::after {
+  content: "";
+  width: 100px;
+  height: 40px;
+  background: linear-gradient(135deg, #d4edda, #eaf5ec);
+  border-radius: 20px;
+  position: absolute;
+  bottom: 30px;
+}
+
+@keyframes bicho-pula {
+  0%, 100% { transform: translate(0, -10px); }
+  50% { transform: translate(0, -30px); }
+}
+
+.slide-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2e0d8;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.dot.ativo {
+  background: var(--vermelho);
+  transform: scale(1.3);
+}
+
 /* ── Sobre ────────────────────────────────────────── */
 
 .bloco-sobre {

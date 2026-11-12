@@ -99,6 +99,29 @@ async function falar(texto: string) {
   }
 }
 
+const SLIDES_TUTORIAL = [
+  {
+    classe: "slide-desenha",
+    frase: "Desenha um bicho!",
+    descricao: "Pega um papel e canetinha e desenha o bicho mais maluco que você imaginar.",
+  },
+  {
+    classe: "slide-conta",
+    frase: "Conta como ele é!",
+    descricao: "Segura o botão e fala: de onde ele veio, o que ele come, como ele se mexe...",
+  },
+  {
+    classe: "slide-escolhe",
+    frase: "Escolhe o seu favorito!",
+    descricao: "A gente cria três versões com imagem. Você escolhe a que mais combina.",
+  },
+  {
+    classe: "slide-zoo",
+    frase: "Ele ganha vida no zoológico!",
+    descricao: "Seu bicho entra no bestiário, se mexe, e pode até conversar com outros bichos.",
+  },
+];
+
 export default function Home() {
   const [etapa, setEtapa] = useState<Etapa>("bestiario");
   const [bichos, setBichos] = useState<Bicho[]>([]);
@@ -111,6 +134,7 @@ export default function Home() {
   const [lento, setLento] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [historiaErro, setHistoriaErro] = useState<string | null>(null);
+  const [slideTutorial, setSlideTutorial] = useState(0);
   const gerandoHistoria = useRef(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -120,9 +144,12 @@ export default function Home() {
 
   useEffect(() => {
     const salvo = localStorage.getItem(CHAVE_BESTIARIO);
-    if (salvo) {
-      setBichos(JSON.parse(salvo));
-    } else {
+    if (salvo) setBichos(JSON.parse(salvo));
+    const tutorialVisto = localStorage.getItem("tutorial-visto");
+    if (!tutorialVisto) {
+      setEtapa("tutorial");
+      falar(SLIDES_TUTORIAL[0].frase);
+    } else if (!salvo) {
       falar(INSTRUCAO_BESTIARIO_VAZIO);
     }
   }, []);
@@ -341,6 +368,46 @@ export default function Home() {
     <main>
       <h1>O bestiário do Samuel</h1>
       {erro && <p role="alert">{erro}</p>}
+
+      {etapa === "tutorial" && (
+        <section className="tutorial">
+          <div className={`slide-ilustracao ${SLIDES_TUTORIAL[slideTutorial].classe}`} />
+          <h2 className="cabecalho-bicho">{SLIDES_TUTORIAL[slideTutorial].frase}</h2>
+          <p className="subtitulo">{SLIDES_TUTORIAL[slideTutorial].descricao}</p>
+          <div className="slide-dots">
+            {SLIDES_TUTORIAL.map((_, i) => (
+              <span key={i} className={`dot ${i === slideTutorial ? "ativo" : ""}`} />
+            ))}
+          </div>
+          <div className="botoes">
+            {slideTutorial < SLIDES_TUTORIAL.length - 1 ? (
+              <button className="primario" onClick={() => {
+                const proximo = slideTutorial + 1;
+                setSlideTutorial(proximo);
+                falar(SLIDES_TUTORIAL[proximo].frase);
+              }}>
+                Próximo
+              </button>
+            ) : (
+              <button className="primario" onClick={() => {
+                localStorage.setItem("tutorial-visto", "1");
+                setSlideTutorial(0);
+                setEtapa("bestiario");
+                if (bichos.length === 0) falar(INSTRUCAO_BESTIARIO_VAZIO);
+              }}>
+                Começar!
+              </button>
+            )}
+            <button className="link" onClick={() => {
+              localStorage.setItem("tutorial-visto", "1");
+              setSlideTutorial(0);
+              setEtapa("bestiario");
+            }}>
+              Pular
+            </button>
+          </div>
+        </section>
+      )}
 
       {etapa === "bestiario" && (
         <section>
