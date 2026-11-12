@@ -2,13 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Etapa = "bestiario" | "captura" | "gravacao" | "carregando" | "escolha" | "detalhe";
+type Etapa =
+  | "bestiario"
+  | "zoologico"
+  | "captura"
+  | "gravacao"
+  | "carregando"
+  | "escolha"
+  | "detalhe";
 
 type Versao = {
   nome: string;
   corpo: string;
   cores: string[];
   comportamentos: string[];
+  bioma?: string;
   prompt_sprite: string;
 };
 
@@ -215,7 +223,38 @@ export default function Home() {
           )}
           <div className="botoes">
             <button className="primario" onClick={novoBicho}>Novo bicho</button>
+            {bichos.length > 0 && (
+              <button onClick={() => setEtapa("zoologico")}>Zoológico</button>
+            )}
           </div>
+        </section>
+      )}
+
+      {etapa === "zoologico" && (
+        <section>
+          <div className="linha-voltar">
+            <button className="link" onClick={() => setEtapa("bestiario")}>‹ Bestiário</button>
+            <span>{bichos.length} criaturas</span>
+          </div>
+          {Object.entries(
+            bichos.reduce<Record<string, Bicho[]>>((grupos, b) => {
+              const chave = b.bioma?.trim() || "Ainda sem bioma";
+              (grupos[chave] ??= []).push(b);
+              return grupos;
+            }, {}),
+          ).map(([bioma, lista]) => (
+            <div key={bioma} className="bioma">
+              <h2>{bioma}</h2>
+              <div className="cartas">
+                {lista.map((b) => (
+                  <button key={b.id} className="carta" onClick={() => abrirBicho(b)}>
+                    <img src={b.foto} alt={b.nome} />
+                    <span className="nome">{b.nome}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
       )}
 
@@ -325,6 +364,7 @@ export default function Home() {
           <h2 className="cabecalho-bicho">{selecionado.nome}</h2>
           <p className="subtitulo">{selecionado.corpo}</p>
           <div className="tags">
+            {selecionado.bioma && <span className="tag destaque">{selecionado.bioma}</span>}
             {selecionado.comportamentos.map((c) => (
               <span key={c} className="tag">{c}</span>
             ))}
