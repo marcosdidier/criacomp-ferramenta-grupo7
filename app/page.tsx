@@ -27,6 +27,8 @@ type Bicho = Versao & {
   foto: string;
   transcricao?: string;
   historia?: string;
+  sprite?: string;
+  spriteFallback?: boolean;
 };
 
 const APP_TOKEN = process.env.NEXT_PUBLIC_APP_SECRET ?? "";
@@ -273,6 +275,29 @@ export default function Home() {
     imagem.src = selecionado.foto;
   }
 
+  async function gerarSprite(bicho: Bicho) {
+    try {
+      const resp = await fetch("/api/sprite", {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ prompt: bicho.prompt_sprite }),
+      });
+      if (!resp.ok) throw new Error("sprite falhou");
+      const dados = await resp.json();
+      if (dados.erro) throw new Error(dados.erro);
+      const spriteUrl = dados.gif
+        ? `data:image/gif;base64,${dados.gif}`
+        : dados.urls?.[0] ?? null;
+      if (spriteUrl) {
+        atualizarBicho({ ...bicho, sprite: spriteUrl });
+      } else {
+        throw new Error("sem sprite");
+      }
+    } catch {
+      atualizarBicho({ ...bicho, spriteFallback: true });
+    }
+  }
+
   function escolher(versao: Versao) {
     if (!foto) return;
     const novo: Bicho = { ...versao, id: crypto.randomUUID(), foto, transcricao: transcricao ?? undefined };
@@ -282,6 +307,7 @@ export default function Home() {
     setSelecionado(novo);
     setEscolhida(null);
     setEtapa("detalhe");
+    gerarSprite(novo);
   }
 
   function abrirBicho(bicho: Bicho) {
@@ -447,7 +473,11 @@ export default function Home() {
           <div className="linha-voltar">
             <button className="link" onClick={() => setEtapa("bestiario")}>‹ Bestiário</button>
           </div>
-          <img className="miniatura" src={selecionado.foto} alt={selecionado.nome} />
+          {selecionado.sprite ? (
+            <img className="miniatura sprite-img" src={selecionado.sprite} alt={selecionado.nome} />
+          ) : (
+            <img className={`miniatura${selecionado.spriteFallback ? " silhueta" : ""}`} src={selecionado.foto} alt={selecionado.nome} />
+          )}
           <h2 className="cabecalho-bicho">{selecionado.nome}</h2>
           <p className="subtitulo">{selecionado.corpo}</p>
           <div className="tags">
