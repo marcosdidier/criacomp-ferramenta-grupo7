@@ -371,83 +371,97 @@ export default function Home() {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      // Fundo escuro
-      const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, "#1a1a2e");
-      grad.addColorStop(1, "#16213e");
-      ctx.fillStyle = grad;
+      // Fundo branco limpo
+      ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, W, H);
 
-      // Borda dourada
-      ctx.strokeStyle = "#e8b730";
-      ctx.lineWidth = 4;
-      ctx.roundRect(2, 2, W - 4, H - 4, 16);
-      ctx.stroke();
+      // Triângulo colorido no canto superior esquerdo
+      ctx.fillStyle = "#d4152f";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(60, 0);
+      ctx.lineTo(0, 60);
+      ctx.closePath();
+      ctx.fill();
 
-      // Barra tipo no topo
-      ctx.fillStyle = "#e8b730";
-      ctx.fillRect(0, 0, W, 32);
-      ctx.fillStyle = "#1a1a2e";
-      ctx.font = "bold 11px system-ui, sans-serif";
+      // Tipo/bioma centralizado no topo
+      ctx.fillStyle = "#888";
+      ctx.font = "italic 13px system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText((selecionado.bioma ?? "CRIATURA").toUpperCase(), W / 2, 22);
+      ctx.fillText(selecionado.bioma ?? "Criatura", W / 2, 28);
 
-      // Imagem
-      const imgSize = 200;
+      // Área da imagem com fundo suave
+      ctx.fillStyle = "#f5f4ef";
+      ctx.beginPath();
+      ctx.roundRect(24, 44, W - 48, 280, 12);
+      ctx.fill();
+
+      // Sprite pixel art
+      const imgSize = 220;
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(imagem, (W - imgSize) / 2, 52, imgSize, imgSize);
+      ctx.drawImage(imagem, (W - imgSize) / 2, 74, imgSize, imgSize);
 
-      // Nome
-      ctx.fillStyle = "#e8b730";
-      ctx.font = "bold 36px system-ui, sans-serif";
+      // Nome em bold uppercase
+      ctx.fillStyle = "#161616";
+      ctx.font = "bold 28px system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(selecionado.nome, W / 2, 300);
+      ctx.fillText(selecionado.nome.toUpperCase(), W / 2, 360);
 
-      // Corpo
-      ctx.fillStyle = "rgba(255,255,255,0.7)";
-      ctx.font = "16px system-ui, sans-serif";
-      ctx.fillText(selecionado.corpo.slice(0, 50), W / 2, 330);
+      // Descrição
+      ctx.fillStyle = "#5c5c5c";
+      ctx.font = "14px system-ui, sans-serif";
+      const descLinhas = selecionado.corpo.match(/.{1,45}/g) ?? [selecionado.corpo];
+      descLinhas.slice(0, 2).forEach((linha, i) => {
+        ctx.fillText(linha, W / 2, 385 + i * 20);
+      });
+
+      // Separador
+      let y = 425;
+      ctx.strokeStyle = "#eee";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(30, y);
+      ctx.lineTo(W - 30, y);
+      ctx.stroke();
+      y += 16;
 
       // Atributos
-      let y = 370;
       const attrs: [string, string | undefined][] = [
-        ["ORIGEM", selecionado.origem],
-        ["HABILIDADE", selecionado.habilidade],
-        ["CURIOSIDADE", selecionado.curiosidade],
-        ["COMPORTAMENTOS", selecionado.comportamentos.join(" / ")],
+        ["Origem", selecionado.origem],
+        ["Habilidade", selecionado.habilidade],
+        ["Curiosidade", selecionado.curiosidade],
+        ["Comportamentos", selecionado.comportamentos.join(" / ")],
       ];
       for (const [label, valor] of attrs) {
         if (!valor) continue;
-        ctx.fillStyle = "rgba(255,255,255,0.06)";
-        ctx.beginPath();
-        ctx.roundRect(30, y, W - 60, 60, 8);
-        ctx.fill();
-        ctx.fillStyle = "#e8b730";
-        ctx.strokeStyle = "#e8b730";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(30, y + 8);
-        ctx.lineTo(30, y + 52);
-        ctx.stroke();
+        ctx.fillStyle = "#d4152f";
         ctx.font = "bold 10px system-ui, sans-serif";
         ctx.textAlign = "left";
-        ctx.fillText(label, 42, y + 18);
-        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.fillText(label.toUpperCase(), 30, y);
+        ctx.fillStyle = "#161616";
         ctx.font = "13px system-ui, sans-serif";
-        ctx.fillText(valor.slice(0, 60), 42, y + 40);
-        y += 70;
+        const linhas = valor.match(/.{1,55}/g) ?? [valor];
+        linhas.slice(0, 2).forEach((l, i) => {
+          ctx.fillText(l, 30, y + 16 + i * 16);
+        });
+        y += 16 + Math.min(linhas.length, 2) * 16 + 12;
+        ctx.strokeStyle = "#eee";
+        ctx.beginPath();
+        ctx.moveTo(30, y - 4);
+        ctx.lineTo(W - 30, y - 4);
+        ctx.stroke();
       }
 
       // Rodapé
-      ctx.fillStyle = "rgba(0,0,0,0.3)";
-      ctx.fillRect(0, H - 30, W, 30);
-      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.fillStyle = "#f5f4ef";
+      ctx.fillRect(0, H - 32, W, 32);
+      ctx.fillStyle = "#aaa";
       ctx.font = "bold 9px system-ui, sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText("BESTIARIO DO SAMUEL", 16, H - 10);
+      ctx.fillText("BESTIARIO DO SAMUEL", 16, H - 12);
       ctx.textAlign = "right";
       const num = (bichos.findIndex(b => b.id === selecionado.id) + 1).toString().padStart(3, "0");
-      ctx.fillText(`#${num}`, W - 16, H - 10);
+      ctx.fillText(`#${num}`, W - 16, H - 12);
 
       const link = document.createElement("a");
       link.download = `${selecionado.nome}.png`;
