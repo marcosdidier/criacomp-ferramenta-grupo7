@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 
 type Etapa =
+  | "tutorial"
   | "bestiario"
   | "zoologico"
+  | "sobre"
   | "captura"
   | "gravacao"
   | "carregando"
@@ -20,6 +22,7 @@ type Versao = {
   comportamentos: string[];
   bioma?: string;
   prompt_sprite: string;
+  imagem_preview?: string;
 };
 
 type Bicho = Versao & {
@@ -362,6 +365,38 @@ export default function Home() {
             {bichos.length > 0 && (
               <button onClick={() => setEtapa("zoologico")}>Zoológico</button>
             )}
+          </div>
+          <div className="botoes-secundarios">
+            <button className="link" onClick={() => setEtapa("sobre")}>Sobre</button>
+            <button className="link" onClick={() => setEtapa("tutorial")}>?</button>
+          </div>
+        </section>
+      )}
+
+      {etapa === "sobre" && (
+        <section>
+          <div className="linha-voltar">
+            <button className="link" onClick={() => setEtapa("bestiario")}>&#8249; Bestiário</button>
+          </div>
+          <h2 className="cabecalho-bicho">Sobre</h2>
+          <div className="bloco-sobre">
+            <p>O Bestiário do Samuel</p>
+            <p className="subtitulo">Ferramenta de Criatividade Computacional</p>
+            <p className="subtitulo">IF866 &middot; CIn-UFPE &middot; 2026.2</p>
+            <p className="subtitulo">Professor: Felipe Calegario</p>
+            <div className="tags">
+              <span className="tag">Júlia Andrade</span>
+              <span className="tag">Daniel Dias</span>
+              <span className="tag">Sofia Remides</span>
+              <span className="tag">Marcos Didier</span>
+              <span className="tag">Guilherme Muniz</span>
+              <span className="tag">Gabriel Rocha</span>
+            </div>
+            <p className="subtitulo">
+              Uma criança desenha um bicho, conta como ele é,
+              e a IA dá vida a ele no zoológico digital.
+            </p>
+            <p className="subtitulo">Criado com IA (OpenAI)</p>
           </div>
         </section>
       )}

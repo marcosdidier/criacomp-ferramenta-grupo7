@@ -23,7 +23,7 @@ body {
 
 main {
   min-height: 100vh;
-  max-width: 520px;
+  max-width: 640px;
   margin: 0 auto;
   padding: 24px 20px 40px;
   display: flex;
@@ -449,3 +449,33 @@ button.link {
 .bioma[data-bioma-tipo="gelo"]     { background: linear-gradient(135deg, #e8eeff, #f0f4ff); border-radius: var(--raio); padding: 16px; }
 .bioma[data-bioma-tipo="noite"]    { background: linear-gradient(135deg, #e0d8f0, #ede8f8); border-radius: var(--raio); padding: 16px; }
 .bioma[data-bioma-tipo="default"]  { background: var(--card); border-radius: var(--raio); padding: 16px; }
+
+/* ── Sobre ────────────────────────────────────────── */
+
+.bloco-sobre {
+  width: 100%;
+  background: var(--card);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.botoes-secundarios {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* ── Transições ───────────────────────────────────── */
+
+section {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
