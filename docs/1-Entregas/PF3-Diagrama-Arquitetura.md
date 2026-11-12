@@ -11,27 +11,27 @@ Visão externa da ferramenta: o que entra, o que sai e quais configurações exi
 ```mermaid
 flowchart LR
     subgraph Entradas
-        E1["Foto do desenho\n(imagem JPEG)"]
-        E2["Descrição falada\n(áudio)"]
+        E1["Foto do desenho\n(JPEG via câmera)"]
+        E2["Descrição falada\n(áudio via microfone)"]
     end
 
     subgraph Configurações
         direction TB
-        C1["Lista de comportamentos\ndisponíveis"]
-        C2["Catálogo de corpos-base\n(lobo, gato, morcego)"]
-        C3["Biomas do zoológico\n(água, vulcão, floresta)"]
-        C4["Template da carta\nde coleção"]
+        C1["Prompt de interpretação\n(instruções para gpt-6-luna)"]
+        C2["Prompt de história\n(instruções para gpt-6-luna)"]
+        C3["Voz e tom\n(VIBE para gpt-4o-mini-tts)"]
     end
 
-    subgraph App["Aplicação Proposta"]
-        X["O Bestiário\ndo Samuel"]
+    subgraph App["O Bestiário do Samuel"]
+        X["App Web\n(Next.js 15)"]
     end
 
     subgraph Saídas
-        S1["3 versões propostas\nda criatura"]
-        S2["Sprite animado\nno zoológico 2D"]
-        S3["Carta para imprimir\n(PNG/PDF)"]
-        S4["Bestiário\n(coleção completa)"]
+        S1["3 versões propostas\n(nome, corpo, bioma,\ncomportamentos)"]
+        S2["Zoológico 2D\n(CSS animations)"]
+        S3["Carta para imprimir\n(canvas → PNG)"]
+        S4["História do bicho\n(texto gerado)"]
+        S5["Sprite pixel art\n(Retro Diffusion)"]
     end
 
     E1 --> App
@@ -39,27 +39,27 @@ flowchart LR
     C1 --> App
     C2 --> App
     C3 --> App
-    C4 --> App
     App --> S1
     App --> S2
     App --> S3
     App --> S4
+    App --> S5
 ```
 
 ### Detalhamento das entradas e saídas
 
 | Tipo | Item | Formato | Descrição |
 |---|---|---|---|
-| **Entrada** | Foto do desenho | JPEG/PNG via câmera do tablet | Desenho livre da criança feito no papel |
-| **Entrada** | Descrição falada | Áudio WAV/WebM via microfone | A criança conta como o bicho é, o que faz, onde mora |
-| **Config** | Comportamentos | JSON (lista fixa) | Comportamentos que a IA pode propor (voa, nada, cospe fogo, é amigável, foge de gato) |
-| **Config** | Corpos-base | JSON (catálogo) | Silhuetas base para os sprites (lobo, gato, morcego, peixe, pássaro, inseto) |
-| **Config** | Biomas | JSON (mapa) | Áreas do zoológico e quais comportamentos ficam alocados em cada bioma |
-| **Config** | Template de carta | HTML/CSS (template) | Layout da carta de coleção com campos dinâmicos |
-| **Saída** | 3 versões | Imagem + JSON | Três interpretações da criatura, cada uma com sprite, corpo-base e comportamentos |
-| **Saída** | Sprite animado | PNG (spritesheet) | Sprite com animações básicas (parado, andando, ação especial) |
-| **Saída** | Carta | PNG ou PDF | Carta de coleção para impressão com ilustração, nome e atributos |
-| **Saída** | Bestiário | JSON + imagens | Coleção de todas as criaturas criadas pela criança |
+| **Entrada** | Foto do desenho | JPEG via `getUserMedia` (câmera traseira) | Desenho livre da criança feito no papel |
+| **Entrada** | Descrição falada | WebM via `MediaRecorder` | A criança conta como o bicho é, o que faz, onde mora |
+| **Config** | Prompt de interpretação | Texto fixo no código | Instrui gpt-6-luna a retornar JSON com 3 versões |
+| **Config** | Prompt de história | Texto fixo no código | Instrui gpt-6-luna a gerar história de 4-6 frases |
+| **Config** | Voz e tom (VIBE) | Texto fixo no código | Direciona gpt-4o-mini-tts (voz marin, tom infantil) |
+| **Saída** | 3 versões | JSON (nome, corpo, cores, comportamentos, bioma, prompt_sprite) | Criança escolhe uma |
+| **Saída** | Zoológico 2D | HTML/CSS com animações por comportamento | Criaturas agrupadas por bioma com movimento |
+| **Saída** | Carta | PNG gerado via Canvas API | Para imprimir ou salvar como imagem |
+| **Saída** | História | Texto gerado por gpt-6-luna | 4-6 frases sobre a criatura |
+| **Saída** | Sprite | GIF animado pixel art (64x64) via Retro Diffusion | Fallback: foto com filtro CSS (silhueta) |
 
 ---
 
@@ -69,15 +69,16 @@ Referência completa: [PF2 — Protótipo de Baixíssima Fidelidade](PF2-Prototi
 
 ```mermaid
 flowchart LR
-    subgraph Interface["Interface (tablet-first, sem texto)"]
+    subgraph Interface["Interface (tablet-first, 520px max)"]
         T1["Bestiário\n(tela inicial)"]
         T2["Captura\n(câmera)"]
         T3["Gravação\n(microfone)"]
-        T4["Espera\n(loading)"]
+        T4["Espera\n(ovo nascendo)"]
         T5["Escolha\n(3 versões)"]
         T6["Detalhe\n(criatura)"]
-        T7["Zoológico\n(mapa 2D)"]
+        T7["Zoológico\n(biomas + animações)"]
         T8["Carta\n(impressão)"]
+        T9["História\n(texto gerado)"]
     end
 
     T1 --> T2
@@ -87,68 +88,70 @@ flowchart LR
     T5 --> T6
     T6 --> T7
     T6 --> T8
+    T6 --> T9
 ```
 
 ---
 
 ## 3. Análise Caixa Transparente — Pipeline Completo
 
-Visão interna da ferramenta: os módulos, serviços externos e como os dados fluem entre eles.
+Visão interna: módulos, serviços externos e fluxo de dados.
 
 ```mermaid
 flowchart TD
     subgraph Entrada["Entrada do Usuário"]
-        FOTO["Foto do desenho\n(JPEG)"]
-        AUDIO["Descrição falada\n(áudio)"]
+        FOTO["Foto do desenho\n(JPEG base64)"]
+        AUDIO["Descrição falada\n(áudio WebM)"]
     end
 
-    subgraph Transcrição["Serviço de Transcrição"]
-        WHISPER["API Whisper\n(speech-to-text)"]
+    subgraph Transcrição["Transcrição"]
+        STT["gpt-transcribe\n(OpenAI, language: pt)"]
     end
 
-    subgraph Interpretação["Serviço de Interpretação"]
-        LLM["Modelo Multimodal\n(Claude Vision / GPT-4V)"]
-        PROMPT["Prompt estruturado\n+ lista de comportamentos\n+ catálogo de corpos"]
+    subgraph Interpretação["Interpretação Multimodal"]
+        LLM["gpt-6-luna\n(OpenAI Responses API)"]
+        PROMPT["Prompt estruturado\n+ transcrição + foto"]
     end
 
-    subgraph Geração["Serviço de Geração Visual"]
-        IMGGEN["API de Geração de Imagem\n(DALL-E / Stable Diffusion)"]
+    subgraph TTS_Serv["Voz"]
+        TTS["gpt-4o-mini-tts\n(voz marin)"]
     end
 
-    subgraph Processamento["Processamento Local"]
-        SPRITE["Gerador de Spritesheet\n(recorte + animação)"]
-        CARD["Gerador de Carta\n(HTML para PNG/PDF)"]
-        ZOO["Motor do Zoológico\n(Canvas / Phaser.js)"]
+    subgraph Sprite_Serv["Geração de Sprite"]
+        RD["Retro Diffusion API v2\n(rd_plus__low_res 64x64\n+ rd_advanced_animation)"]
     end
 
-    subgraph Armazenamento["Armazenamento"]
-        DB["Bestiário\n(banco de dados)"]
+    subgraph Cliente["Processamento no Navegador"]
+        CARD["Canvas API\n(carta PNG 800x1000)"]
+        ZOO["CSS Animations\n(zoológico 2D por bioma)"]
+        LS["localStorage\n(bestiário-samuel)"]
     end
 
     subgraph Saída["Saída para o Usuário"]
         TELA_ESCOLHA["Tela de Escolha\n(3 versões)"]
         TELA_ZOO["Zoológico 2D\n(sprites animados)"]
         TELA_CARTA["Carta para imprimir"]
+        TELA_HIST["História do bicho"]
     end
 
-    AUDIO --> WHISPER
-    WHISPER -->|texto transcrito| LLM
-    FOTO -->|imagem| LLM
+    AUDIO --> STT
+    STT -->|texto transcrito| LLM
+    FOTO -->|imagem base64| LLM
     PROMPT -->|contexto| LLM
 
-    LLM -->|"JSON estruturado:\n3x {corpo, cores,\ncomportamentos,\nprompt de imagem}"| IMGGEN
+    LLM -->|"JSON: 3x {nome, corpo,\ncores, comportamentos,\nbioma, prompt_sprite}"| TELA_ESCOLHA
 
-    IMGGEN -->|"3 imagens\nda criatura"| SPRITE
+    TELA_ESCOLHA -->|"criança escolhe"| LS
+    TELA_ESCOLHA -->|"prompt_sprite"| RD
+    RD -->|"GIF animado\n(ou fallback silhueta)"| ZOO
 
-    SPRITE -->|"3 spritesheets"| TELA_ESCOLHA
+    LS -->|dados da criatura| ZOO
+    LS -->|dados da criatura| CARD
+    LS -->|dados da criatura| LLM
 
-    TELA_ESCOLHA -->|"criança escolhe\numa versão"| DB
+    LLM -->|história gerada| TELA_HIST
+    TTS -->|áudio MP3| Saída
 
-    DB -->|dados da criatura| SPRITE
-    DB -->|dados da criatura| CARD
-    DB -->|dados da criatura| ZOO
-
-    SPRITE -->|spritesheet final| ZOO
     ZOO --> TELA_ZOO
     CARD --> TELA_CARTA
 ```
@@ -164,53 +167,59 @@ flowchart LR
     subgraph Dados["Dados (artefatos)"]
         D1["Desenhos de crianças\n(fotos do papel)"]
         D2["Descrições faladas\n(áudio)"]
-        D3["Comportamentos\n(lista curada pelo grupo)"]
-        D4["Corpos-base\n(catálogo de silhuetas)"]
     end
 
     subgraph Modelos["Modelos Pré-treinados (via API)"]
-        M1["Whisper\n(OpenAI)"]
-        M2["Claude Vision\nou GPT-4V\n(multimodal)"]
-        M3["DALL-E\nou Stable Diffusion\n(geração de imagem)"]
+        M1["gpt-transcribe\n(OpenAI STT)"]
+        M2["gpt-6-luna\n(OpenAI multimodal)"]
+        M3["Retro Diffusion\n(sprite pixel art)"]
+        M4["gpt-4o-mini-tts\n(OpenAI TTS, voz marin)"]
     end
 
     subgraph Inferência["Inferência e Geração"]
-        I1["Transcrição\n(áudio para texto)"]
-        I2["Interpretação\n(imagem + texto para JSON)"]
-        I3["Geração de sprite\n(prompt para imagem)"]
+        I1["Transcrição\n(áudio → texto pt)"]
+        I2["Interpretação\n(imagem + texto → JSON)"]
+        I3["Geração de sprite\n(prompt → pixel art 64x64)"]
+        I4["Voz de instrução\n(texto → áudio MP3)"]
+        I5["Geração de história\n(dados → texto infantil)"]
     end
 
     subgraph Dados_Gerados["Dados Gerados"]
         G1["Texto da descrição"]
-        G2["JSON da criatura\n(corpo, cores, comportamentos)"]
-        G3["Spritesheet\n(imagem animável)"]
-        G4["Carta de coleção\n(PNG/PDF)"]
+        G2["JSON da criatura\n(nome, corpo, cores,\ncomportamentos, bioma)"]
+        G3["Sprite animado\n(GIF pixel art)"]
+        G4["Carta de coleção\n(PNG via Canvas)"]
+        G5["História\n(4-6 frases)"]
+        G6["Áudio de instrução\n(MP3)"]
     end
 
     subgraph Aplicação["Aplicação"]
         A1["Parâmetros\n(corpo, comportamentos,\nnome, bioma)"]
-        A2["Interface\n(tablet-first,\nícones + voz,\nzoológico 2D)"]
+        A2["Interface\n(tablet-first,\nzoológico 2D,\nvoz nas instruções)"]
     end
 
     D1 --> I2
     D2 --> I1
-    D3 --> I2
-    D4 --> I2
 
     M1 -.->|"modelo usado"| I1
     M2 -.->|"modelo usado"| I2
+    M2 -.->|"modelo usado"| I5
     M3 -.->|"modelo usado"| I3
+    M4 -.->|"modelo usado"| I4
 
     I1 --> G1
     G1 --> I2
     I2 --> G2
     G2 --> I3
     I3 --> G3
-    G3 --> Aplicação
+    I4 --> G6
+    I5 --> G5
     G2 --> A1
     G3 --> A2
-    G2 -->|"template + dados"| G4
+    G2 -->|"Canvas API"| G4
     G4 --> A2
+    G5 --> A2
+    G6 --> A2
 ```
 
 ### Legenda
@@ -224,13 +233,15 @@ flowchart LR
 
 ### Onde a IA entra
 
-| Componente | Tipo de IA | Papel | Sem IA, o que acontece? |
+| Componente | Modelo | Papel | Sem IA, o que acontece? |
 |---|---|---|---|
-| **Whisper** | Speech-to-text (pré-treinado) | Transcreve a fala da criança para texto | A criança precisaria digitar, o que não é viável com 8 anos |
-| **Modelo multimodal** | Vision + Language (pré-treinado) | Interpreta o desenho junto com a descrição e propõe corpo, cores e comportamentos | Não haveria interpretação automática do desenho livre |
-| **Geração de imagem** | Text/Image-to-image (pré-treinado) | Gera o sprite da criatura a partir da interpretação | O grupo precisaria desenhar cada criatura manualmente |
+| **Transcrição** | gpt-transcribe (OpenAI) | Transcreve a fala da criança para texto em português | A criança precisaria digitar, inviável com 8 anos |
+| **Interpretação** | gpt-6-luna (OpenAI) | Interpreta desenho + descrição, propõe corpo, cores, comportamentos e bioma | Não haveria interpretação automática do desenho livre |
+| **Sprite** | Retro Diffusion API | Gera sprite pixel art 64x64 animado a partir do prompt_sprite | Foto do desenho usada como fallback (silhueta CSS) |
+| **Voz** | gpt-4o-mini-tts (OpenAI) | Fala as instruções para a criança ("coloca o desenho dentro do quadrado") | Criança precisaria ler, difícil com 8 anos |
+| **História** | gpt-6-luna (OpenAI) | Gera história curta sobre a criatura a partir dos dados e da transcrição | Não haveria história |
 
-Nenhum modelo é treinado ou ajustado pelo grupo. Todos são usados via API com prompts específicos para o contexto do bestiário.
+Nenhum modelo é treinado ou ajustado pelo grupo. Todos são usados via API com prompts específicos.
 
 ---
 
@@ -238,168 +249,122 @@ Nenhum modelo é treinado ou ajustado pelo grupo. Todos são usados via API com 
 
 ```mermaid
 flowchart TD
-    subgraph Frontend["Frontend (App Web)"]
-        NEXT["Next.js / React"]
-        CANVAS["Canvas API ou Phaser.js\n(motor do zoológico)"]
-        PWA["Progressive Web App\n(funciona offline parcial)"]
+    subgraph Frontend["Frontend"]
+        NEXT["Next.js 15\n+ React 19\n+ TypeScript"]
+        CSS["CSS Animations\n(zoológico 2D)"]
+        CANVAS["Canvas API\n(carta PNG)"]
     end
 
-    subgraph Backend["Backend (API)"]
-        API["API REST\n(Node.js ou Python FastAPI)"]
-        TRANS["Endpoint /transcrever\n(proxy para Whisper)"]
-        INTER["Endpoint /interpretar\n(proxy para modelo multimodal)"]
-        GEN["Endpoint /gerar-sprite\n(proxy para geração de imagem)"]
-        CARTA["Endpoint /gerar-carta\n(HTML para PNG)"]
+    subgraph Backend["Backend (Next.js API Routes)"]
+        TRANS["/api/transcrever\n(proxy gpt-transcribe)"]
+        INTER["/api/interpretar\n(proxy gpt-6-luna)"]
+        FALAR["/api/falar\n(proxy gpt-4o-mini-tts)"]
+        HIST["/api/historia\n(proxy gpt-6-luna)"]
+        SPR["/api/sprite\n(proxy Retro Diffusion)"]
+        SEC["_seguranca.ts\n(token + rate limit)"]
     end
 
-    subgraph Externos["Serviços Externos (APIs)"]
-        EX1["OpenAI Whisper API"]
-        EX2["Anthropic Claude API\nou OpenAI GPT-4V"]
-        EX3["OpenAI DALL-E API\nou Stability AI"]
+    subgraph Externos["Serviços Externos"]
+        EX1["OpenAI\n(gpt-transcribe,\ngpt-6-luna,\ngpt-4o-mini-tts)"]
+        EX2["Retro Diffusion\n(sprite pixel art)"]
     end
 
     subgraph Infra["Infraestrutura"]
-        VERCEL["Vercel ou Railway\n(hospedagem)"]
-        SUPA["Supabase ou SQLite\n(bestiário / dados)"]
-        S3["Supabase Storage\nou S3 (imagens)"]
+        VERCEL["Vercel\n(hospedagem)"]
+        LOCAL["localStorage\n(bestiário no navegador)"]
     end
 
     Frontend --> Backend
     TRANS --> EX1
-    INTER --> EX2
-    GEN --> EX3
-    Backend --> Infra
-    Frontend --> Infra
+    INTER --> EX1
+    FALAR --> EX1
+    HIST --> EX1
+    SPR --> EX2
+    SEC --> Backend
+    Frontend --> LOCAL
+    Backend --> VERCEL
 ```
 
 ### Escolha de cada tecnologia
 
 | Camada | Tecnologia | Justificativa |
 |---|---|---|
-| **Frontend** | Next.js + React | Ecossistema amplo, deploy simples na Vercel, SSR para performance no tablet |
-| **Zoológico 2D** | Phaser.js ou Canvas API | Phaser tem sistema de sprites, animação e física 2D prontos. Canvas puro é alternativa mais leve |
-| **Backend** | Node.js (Express/Fastify) ou Python (FastAPI) | Proxy para as APIs externas, sem expor chaves no frontend |
-| **Transcrição** | OpenAI Whisper API | Funciona bem com português e voz de criança, custo baixo (centavos por chamada) |
-| **Interpretação** | Claude Vision (Anthropic) ou GPT-4V (OpenAI) | Modelo multimodal que lê imagem e texto juntos. Claude Vision tende a ser mais preciso em instruções estruturadas |
-| **Geração de imagem** | DALL-E 3 (OpenAI) ou Stable Diffusion (Stability AI) | Gera sprite a partir de prompt. DALL-E é mais simples de integrar. SD permite mais controle |
-| **Banco** | Supabase (PostgreSQL) ou SQLite | Armazena o bestiário (metadados das criaturas). Supabase tem auth e storage integrados |
-| **Storage** | Supabase Storage ou S3 | Armazena imagens dos sprites e fotos dos desenhos |
-| **Hospedagem** | Vercel | Deploy automático a cada push, funciona fora da máquina do grupo, HTTPS nativo |
+| **Frontend** | Next.js 15 + React 19 | App Router, deploy simples na Vercel, TypeScript |
+| **Zoológico 2D** | CSS Animations | Animações por comportamento (voa, nada, corre, fogo) sem game engine |
+| **Backend** | Next.js API Routes (Node.js) | Proxy para APIs externas, sem expor chaves no frontend |
+| **Transcrição** | OpenAI gpt-transcribe | STT otimizado para português, `language: "pt"` para voz de criança |
+| **Interpretação** | OpenAI gpt-6-luna | Multimodal (imagem + texto), retorna JSON estruturado com 3 versões |
+| **Voz (TTS)** | OpenAI gpt-4o-mini-tts (voz marin) | Voz quente e infantil para instruções, com VIBE prompt detalhado |
+| **História** | OpenAI gpt-6-luna | Gera história de 4-6 frases a partir dos dados da criatura |
+| **Sprite** | Retro Diffusion API v2 | Pixel art 64x64 com animação walking. Fallback: silhueta CSS |
+| **Armazenamento** | localStorage (navegador) | Sem servidor de banco. Chave `bestiario-samuel`, dados em JSON |
+| **Segurança** | Token APP_SECRET + rate limit 30 req/min/IP | Protege rotas antes do deploy público |
+| **Hospedagem** | Vercel | Deploy automático, HTTPS nativo, variáveis de ambiente seguras |
 
 ---
 
 ## 6. Fluxo de Dados Detalhado
 
-Sequência completa de uma criação de criatura, do desenho ao zoológico.
+Sequência completa de uma criação de criatura.
 
 ```mermaid
 sequenceDiagram
     actor Samuel
-    participant App as App Web (Frontend)
-    participant API as Backend (API)
-    participant W as Whisper API
-    participant LLM as Modelo Multimodal
-    participant IMG as Geração de Imagem
-    participant DB as Banco de Dados
-    participant Zoo as Motor do Zoológico
+    participant App as App Web
+    participant STT as /api/transcrever
+    participant LLM as /api/interpretar
+    participant TTS as /api/falar
+    participant RD as /api/sprite
+    participant LS as localStorage
 
-    Samuel->>App: Fotografa o desenho
-    App->>API: POST /transcrever (áudio)
-    Note over Samuel,App: Samuel pressiona o microfone e descreve o bicho
-    API->>W: Envia áudio
-    W-->>API: Texto transcrito
+    Note over App,TTS: Instruções faladas ao abrir cada tela
+    App->>TTS: POST {texto: "Coloca o desenho..."}
+    TTS-->>App: MP3 (voz marin)
 
-    App->>API: POST /interpretar (imagem + texto)
-    API->>LLM: Envia foto + texto + prompt estruturado
-    Note over LLM: Analisa desenho e descrição.<br/>Seleciona corpo-base, cores,<br/>propõe 3 combinações de comportamentos.
-    LLM-->>API: JSON com 3 versões
+    Samuel->>App: Fotografa o desenho (câmera)
+    Samuel->>App: Pressiona microfone e descreve o bicho
 
-    loop Para cada versão (3x)
-        API->>IMG: Gera sprite da criatura
-        IMG-->>API: Imagem gerada
-    end
+    App->>STT: POST FormData(áudio)
+    STT-->>App: {texto: "cospe fogo..."}
 
-    API-->>App: 3 versões (imagem + metadados)
+    App->>LLM: POST {foto: base64, transcricao: texto}
+    LLM-->>App: {versoes: [{nome, corpo, cores, comportamentos, bioma, prompt_sprite} x3]}
+
     App->>Samuel: Mostra 3 opções lado a lado
 
-    Samuel->>App: Escolhe versão favorita
-    App->>API: POST /salvar-criatura (versão escolhida)
-    API->>DB: Salva metadados + imagem
-    DB-->>API: Criatura salva
+    Samuel->>App: Toca na versão favorita
+    App->>LS: Salva criatura no bestiário
 
-    API-->>App: Confirmação + dados completos
-    App->>Zoo: Adiciona sprite ao mapa 2D
-    Zoo->>Samuel: Criatura aparece andando no zoológico
+    Note over App,RD: Sprite gerado em background (não bloqueia)
+    App->>RD: POST {prompt: prompt_sprite}
+    RD-->>App: {gif: base64} ou erro (fallback silhueta)
+    App->>LS: Atualiza criatura com sprite
+
+    App->>Samuel: Criatura aparece no zoológico com animação
 ```
 
 ---
 
 ## 7. Estrutura do Projeto
 
-Organização planejada dos diretórios do repositório quando o código for implementado.
-
 ```
 criacomp-ferramenta-grupo7/
-├── docs/                              # Documentação do projeto
-│   ├── 0-Dossie-completo.pdf
-│   ├── 1-Entregas/                    # PDFs e markdowns das entregas
-│   │   ├── PF0-Caixa-Morfologica-Grupo7.pdf
-│   │   ├── PF1-Slides-do-Pitch-Grupo7.pdf
-│   │   ├── PF2-Prototipo-Baixa-Fidelidade.md
-│   │   └── PF3-Diagrama-Arquitetura.md
-│   ├── 2-Pitch/
-│   ├── 3-Processo-PF0/
-│   ├── 4-Plano-tecnico/
-│   └── 5-Contexto-da-disciplina/
+├── app/
+│   ├── page.tsx                   # UI completa (state machine de 9 etapas)
+│   ├── layout.tsx                 # Root layout (pt-BR)
+│   ├── globals.css                # Estilos (mobile-first, animações, biomas)
+│   └── api/
+│       ├── _seguranca.ts          # Token + rate limit (compartilhado)
+│       ├── transcrever/route.ts   # gpt-transcribe (STT)
+│       ├── interpretar/route.ts   # gpt-6-luna (multimodal)
+│       ├── falar/route.ts         # gpt-4o-mini-tts (TTS)
+│       ├── historia/route.ts      # gpt-6-luna (história)
+│       └── sprite/route.ts        # Retro Diffusion (sprite)
 │
-├── src/                               # Código-fonte
-│   ├── app/                           # Frontend Next.js (App Router)
-│   │   ├── page.tsx                   # Tela do bestiário
-│   │   ├── captura/page.tsx           # Tela da câmera
-│   │   ├── gravacao/page.tsx          # Tela do microfone
-│   │   ├── escolha/page.tsx           # Tela das 3 versões
-│   │   ├── criatura/[id]/page.tsx     # Detalhe da criatura
-│   │   ├── zoologico/page.tsx         # Mapa 2D
-│   │   ├── carta/[id]/page.tsx        # Carta para imprimir
-│   │   └── sobre/page.tsx             # Sobre
-│   │
-│   ├── components/                    # Componentes reutilizáveis
-│   │   ├── BotaoGrande.tsx            # Botões com ícone (sem texto)
-│   │   ├── CardCriatura.tsx           # Card do bestiário
-│   │   ├── SpritePreview.tsx          # Preview animada do sprite
-│   │   └── VozInstrucao.tsx           # Componente de instrução por voz
-│   │
-│   ├── zoo/                           # Motor do zoológico 2D
-│   │   ├── engine.ts                  # Loop principal do canvas/Phaser
-│   │   ├── mapa.ts                    # Definição de biomas e tiles
-│   │   ├── criatura-sprite.ts         # Classe do sprite animado
-│   │   └── comportamentos.ts          # Lógica de cada comportamento
-│   │
-│   └── lib/                           # Utilitários e clients de API
-│       ├── api.ts                     # Client para o backend
-│       └── tipos.ts                   # Tipos TypeScript compartilhados
-│
-├── api/                               # Backend (API Routes ou servidor separado)
-│   ├── transcrever.ts                 # Proxy para Whisper
-│   ├── interpretar.ts                 # Proxy para modelo multimodal
-│   ├── gerar-sprite.ts                # Proxy para geração de imagem
-│   ├── gerar-carta.ts                 # HTML para PNG/PDF
-│   └── salvar-criatura.ts             # CRUD do bestiário
-│
-├── config/                            # Configurações do bestiário
-│   ├── comportamentos.json            # Lista de comportamentos disponíveis
-│   ├── corpos-base.json               # Catálogo de silhuetas
-│   └── biomas.json                    # Mapeamento bioma e comportamento
-│
-├── assets-publicos/                   # Imagens que podem ir pro repositório
-│   ├── diagramas/                     # Diagramas de arquitetura renderizados
-│   └── prints/                        # Capturas de tela da interface
-│
-├── dados-samuel/                      # GITIGNORED — dados do Samuel (menor)
-│
-├── .env.example                       # Variáveis de ambiente (sem segredos)
-├── .gitignore
-├── package.json
+├── docs/                          # Documentação (PF0-PF3, pitch, processo)
+├── .env.example                   # Template de variáveis de ambiente
+├── .gitignore                     # Bloqueia mídia do Samuel (menor)
+├── package.json                   # Next.js 15, React 19, OpenAI SDK
 ├── tsconfig.json
 └── README.md
 ```
@@ -408,35 +373,34 @@ criacomp-ferramenta-grupo7/
 
 ## 8. Privacidade e Segurança
 
-Samuel é menor de idade. O sistema foi pensado para proteger os dados dele.
+Samuel é menor de idade. O sistema protege os dados dele.
 
 ```mermaid
 flowchart TD
-    subgraph Dados_Sensíveis["Dados Sensíveis (nunca versionados)"]
-        DS1["Áudio da voz de Samuel"]
-        DS2["Fotos dos desenhos\n(podem conter rosto/mãos)"]
+    subgraph Sensível["Dados Sensíveis (nunca versionados)"]
+        DS1["Áudio da voz"]
+        DS2["Foto do desenho"]
     end
 
-    subgraph Ciclo_de_Vida["Ciclo de Vida dos Dados"]
-        CV1["Áudio enviado\npara transcrição"]
-        CV2["Texto transcrito\nsubstitui o áudio"]
-        CV3["Áudio deletado\nimediatamente"]
-        CV4["Foto enviada\npara interpretação"]
-        CV5["Sprite gerado\nsubstitui a foto"]
-        CV6["Foto original\nnão é armazenada\nno servidor"]
+    subgraph Ciclo["Ciclo de Vida"]
+        CV1["Áudio → /api/transcrever"]
+        CV2["Texto transcrito substitui áudio"]
+        CV3["Áudio descartado no servidor"]
+        CV4["Foto → /api/interpretar"]
+        CV5["JSON da criatura substitui foto no servidor"]
+        CV6["Foto fica apenas em localStorage\n(navegador da criança)"]
     end
 
-    subgraph Armazenado["O que fica armazenado"]
-        A1["Texto da descrição\n(sem voz)"]
-        A2["Sprite gerado\n(sem foto real)"]
-        A3["Metadados da criatura\n(nome, corpo, comportamentos)"]
+    subgraph Guardado["O que fica armazenado"]
+        A1["localStorage: foto base64\n+ metadados + história"]
+        A2["Servidor: nada persistido\n(stateless)"]
     end
 
     DS1 --> CV1 --> CV2 --> CV3
     DS2 --> CV4 --> CV5 --> CV6
     CV2 --> A1
-    CV5 --> A2
-    A3
+    CV6 --> A1
+    A2
 ```
 
 ### Medidas de proteção
@@ -444,54 +408,40 @@ flowchart TD
 | Medida | Implementação |
 |---|---|
 | Sem login e sem conta | Samuel não fornece nome, email nem senha |
-| Áudio descartado após transcrição | O servidor deleta o arquivo de áudio assim que o texto é retornado |
-| Foto não armazenada no servidor | A foto é enviada para interpretação e depois descartada. Apenas o sprite fica |
-| Sem dados pessoais no bestiário | O bestiário guarda apenas: nome da criatura, sprite, corpo-base e comportamentos |
-| `.gitignore` bloqueia mídia | Formatos de áudio, foto e vídeo são bloqueados por padrão no repositório |
-| Pasta `dados-samuel/` ignorada | Qualquer material de teste com o Samuel fica apenas na máquina de quem testa |
-| API sem chave exposta | As chaves das APIs ficam no servidor. O frontend não tem acesso direto aos modelos |
-| Autorização dos pais | Os pais do Samuel autorizaram os testes em 17/10/2026 |
+| Áudio descartado após transcrição | O servidor não persiste o arquivo de áudio |
+| Servidor stateless | Nenhum dado é salvo no servidor. Tudo fica em localStorage no navegador |
+| Foto apenas local | A foto base64 fica em localStorage, nunca sobe para banco de dados |
+| `.gitignore` bloqueia mídia | Áudio, foto e vídeo bloqueados por padrão no repositório |
+| `dados-samuel/` ignorada | Material de teste fica apenas na máquina de quem testa |
+| Chaves no servidor | OPENAI_API_KEY e RD_API_KEY ficam nas variáveis de ambiente da Vercel |
+| Token de acesso | Rotas /api/* protegidas por APP_SECRET + rate limit 30 req/min/IP |
+| Autorização dos pais | Registrada em 17/10/2026 |
 
 ---
 
 ## 9. Riscos Técnicos e Mitigações
 
-| Risco | Impacto | Probabilidade | Mitigação |
-|---|---|---|---|
-| **Whisper não entender voz de criança** | Transcrição errada invalida a interpretação | Média | Testar com gravações do Samuel. Fallback: botão "contar de novo" e, em último caso, adulto digita |
-| **Modelo multimodal interpretar mal o desenho** | Criatura não tem relação com o que Samuel desenhou | Média | Oferecer 3 versões para aumentar chance de acerto. Prompt com exemplos (few-shot) |
-| **Geração de sprite inconsistente** | Sprites com estilos visuais diferentes entre si | Alta | Fixar estilo no prompt ("pixel art 32x32, fundo transparente, vista lateral"). Usar seed fixa por sessão |
-| **Latência total do pipeline** | Criança perde interesse esperando mais de 30s | Média | Tela de espera com animação. Processar transcrição e interpretação em paralelo quando possível |
-| **Custo das APIs** | Orçamento do grupo é limitado | Baixa | Estimar custo por criatura no protótipo. Limitar chamadas por sessão |
-| **Spritesheet não animar bem** | Movimento no zoológico fica estranho | Média | Começar com sprites estáticos que se movem (slide). Animação de frames como melhoria |
-| **Motor do zoológico complexo demais** | Atrasa o cronograma | Média | Versão mínima: canvas com sprites que se movem em linha reta. Phaser.js como melhoria |
+| Risco | Impacto | Mitigação |
+|---|---|---|
+| **gpt-transcribe não entender voz de criança** | Transcrição errada | `language: "pt"` + botão "contar de novo" + mensagem "hum, não entendi" |
+| **gpt-6-luna interpretar mal o desenho** | Criatura não combina | 3 versões para escolher + prompt com instruções detalhadas |
+| **Retro Diffusion sem saldo** | Sem sprite | Fallback: foto com filtro CSS (silhueta colorida) |
+| **JSON da IA com markdown fences** | Parse falha | `limparJSON()` remove fences antes de `JSON.parse` |
+| **Latência do pipeline (>30s)** | Criança perde interesse | Tela de espera com ovo animado + mensagem se demorar |
+| **localStorage cheio (~5MB)** | Não salva novas criaturas | Aceitável para demo. Fotos base64 ~100-200KB cada |
+| **API abusada sem token** | Gasta créditos | APP_SECRET + rate limit antes do deploy |
 
 ---
 
 ## 10. Custo Estimado por Criatura
 
-Estimativa com base nos preços públicos das APIs (outubro 2026). Valores reais devem ser medidos no protótipo.
-
 | Etapa | API | Custo estimado |
 |---|---|---|
-| Transcrição | Whisper (OpenAI) | ~US$ 0,006 por minuto de áudio (~10s de fala) |
-| Interpretação | Claude Vision ou GPT-4V | ~US$ 0,01–0,03 por chamada (1 imagem + texto curto) |
-| Geração de sprite | DALL-E 3 (1024x1024) | ~US$ 0,04 por imagem x 3 versões = ~US$ 0,12 |
-| **Total por criatura** | | **~US$ 0,15** |
+| Transcrição | gpt-transcribe | ~US$ 0,006 (~10s de áudio) |
+| Interpretação | gpt-6-luna (multimodal) | ~US$ 0,01-0,03 (1 imagem + texto) |
+| Sprite | Retro Diffusion (64x64 + animação) | ~US$ 0,20 |
+| Voz (instruções) | gpt-4o-mini-tts | ~US$ 0,005 por frase |
+| História | gpt-6-luna (texto) | ~US$ 0,005 |
+| **Total por criatura** | | **~US$ 0,25** |
 
-Para 50 criaturas (testes + demonstração + Avaliação Cruzada): **~US$ 7,50**.
-
----
-
-## 11. Cronograma Técnico
-
-| Data | Marco | Detalhamento |
-|---|---|---|
-| **29/10** | PF2 + PF3 entregues | Protótipo de baixa fidelidade e diagrama de arquitetura (este documento) |
-| 29/10 a 09/11 | Implementação do pipeline | Backend: endpoints de transcrição, interpretação e geração. Frontend: telas principais |
-| 03 a 05/11 | Semana sem aula | Desenvolvimento intensivo. Zoológico 2D mínimo funcionando |
-| **10/11** | PF4 — Ponta a ponta | Samuel desenha, fala, escolhe e o bicho aparece no zoológico |
-| **12/11** | PF5 — Outro grupo usa | Outro grupo usa sem explicação. Anotar onde travam |
-| 13 a 17/11 | Correções e polimento | Corrigir problemas encontrados no PF5. Carta para imprimir. Tela Sobre |
-| **17/11** | PF6 — Congela + PF7 | Versão final congelada. Apresentação |
-| **26/11** | PF9 — Avaliação Cruzada | Ferramenta acessível por link público, sem ninguém explicando |
+Para 50 criaturas (testes + demo + Avaliação Cruzada): **~US$ 12,50**.
