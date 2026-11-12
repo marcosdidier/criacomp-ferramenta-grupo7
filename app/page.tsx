@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PlusCircle, Map, Info, HelpCircle, ArrowLeft, Volume2, Camera, RefreshCw, Mic, BookOpen, Sparkles, Printer, Download, ChevronRight, Play } from "lucide-react";
 
 type Etapa =
   | "tutorial"
@@ -469,7 +470,7 @@ export default function Home() {
                 setSlideTutorial(proximo);
                 falar(SLIDES_TUTORIAL[proximo].frase);
               }}>
-                Próximo
+                Próximo <ChevronRight size={16} />
               </button>
             ) : (
               <button className="primario" onClick={() => {
@@ -517,14 +518,14 @@ export default function Home() {
             </div>
           )}
           <div className="botoes">
-            <button className="primario" onClick={novoBicho}>Novo bicho</button>
+            <button className="primario" onClick={novoBicho}><PlusCircle size={18} /> Novo Bicho</button>
             {bichos.length > 0 && (
-              <button onClick={() => setEtapa("zoologico")}>Zoológico</button>
+              <button onClick={() => setEtapa("zoologico")}><Map size={18} /> Zoológico</button>
             )}
           </div>
           <div className="botoes-secundarios">
-            <button className="link" onClick={() => setEtapa("sobre")}>Sobre</button>
-            <button className="link" onClick={() => setEtapa("tutorial")}>?</button>
+            <button className="link" onClick={() => setEtapa("sobre")}><Info size={14} /> Sobre</button>
+            <button className="link" onClick={() => setEtapa("tutorial")}><HelpCircle size={14} /> Tutorial</button>
           </div>
         </section>
       )}
@@ -532,7 +533,7 @@ export default function Home() {
       {etapa === "sobre" && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={() => setEtapa("bestiario")}>&#8249; Bestiário</button>
+            <button className="link" onClick={() => setEtapa("bestiario")}><ArrowLeft size={14} /> Bestiário</button>
           </div>
           <h2 className="cabecalho-bicho">Sobre</h2>
           <div className="bloco-sobre">
@@ -560,7 +561,7 @@ export default function Home() {
       {etapa === "zoologico" && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={() => { setEtapa("bestiario"); setPrimeiroParaDialogo(null); setDialogoFalas([]); }}>&#8249; Bestiário</button>
+            <button className="link" onClick={() => { setEtapa("bestiario"); setPrimeiroParaDialogo(null); setDialogoFalas([]); }}><ArrowLeft size={14} /> Bestiário</button>
             <span>{bichos.length} criaturas</span>
           </div>
           {primeiroParaDialogo && (
@@ -620,8 +621,8 @@ export default function Home() {
       {etapa === "captura" && !foto && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={() => setEtapa("bestiario")}>‹ Voltar</button>
-            <button className="link" onClick={() => falar(INSTRUCAO_CAPTURA)}>ouvir</button>
+            <button className="link" onClick={() => setEtapa("bestiario")}><ArrowLeft size={14} /> Voltar</button>
+            <button className="link" onClick={() => falar(INSTRUCAO_CAPTURA)}><Volume2 size={14} /> Ouvir</button>
           </div>
           <div className="moldura">
             <div className="guia">
@@ -651,8 +652,8 @@ export default function Home() {
       {etapa === "gravacao" && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={novoBicho}>‹ Voltar</button>
-            <button className="link" onClick={novoBicho}>Refazer foto</button>
+            <button className="link" onClick={novoBicho}><ArrowLeft size={14} /> Voltar</button>
+            <button className="link" onClick={novoBicho}><Camera size={14} /> Refazer Foto</button>
           </div>
           {foto && <img className="miniatura" src={foto} alt="Foto do desenho" />}
           <p>{INSTRUCAO_GRAVACAO}</p>
@@ -669,7 +670,7 @@ export default function Home() {
               Segure para falar
             </button>
           )}
-          <button className="link" onClick={() => falar(INSTRUCAO_GRAVACAO)}>ouvir de novo</button>
+          <button className="link" onClick={() => falar(INSTRUCAO_GRAVACAO)}><Volume2 size={14} /> Ouvir de novo</button>
         </section>
       )}
 
@@ -691,7 +692,7 @@ export default function Home() {
       {etapa === "escolha" && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={() => setEtapa("gravacao")}>‹ Voltar</button>
+            <button className="link" onClick={() => setEtapa("gravacao")}><ArrowLeft size={14} /> Voltar</button>
           </div>
           <p>Qual você quer?</p>
           <div className="cartas escolha-cartas">
@@ -728,8 +729,8 @@ export default function Home() {
           )}
           {transcricao && <p className="subtitulo">Você disse: &ldquo;{transcricao}&rdquo;</p>}
           <div className="botoes">
-            <button onClick={() => setEtapa("gravacao")}>Contar de novo</button>
-            <button onClick={novoBicho}>Redesenhar</button>
+            <button onClick={() => setEtapa("gravacao")}><Mic size={16} /> Contar de Novo</button>
+            <button onClick={novoBicho}><RefreshCw size={16} /> Redesenhar</button>
           </div>
         </section>
       )}
@@ -775,12 +776,12 @@ export default function Home() {
             ))}
           </div>
           <div className="botoes">
-            <button onClick={() => setEtapa("carta")}>Ver carta</button>
-            <button onClick={() => setEtapa("historia")}>História</button>
+            <button onClick={() => setEtapa("carta")}><BookOpen size={16} /> Ver Carta</button>
+            <button onClick={() => setEtapa("historia")}><Sparkles size={16} /> História</button>
           </div>
           <div className="botoes">
             <button onClick={() => setEtapa("zoologico")}>Zoológico</button>
-            <button className="primario" onClick={novoBicho}>Novo bicho</button>
+            <button className="primario" onClick={novoBicho}><PlusCircle size={16} /> Novo Bicho</button>
           </div>
         </section>
       )}
@@ -789,7 +790,7 @@ export default function Home() {
         <section>
           <div className="linha-voltar">
             <button className="link" onClick={() => setEtapa("detalhe")}>‹ {selecionado.nome}</button>
-            <button className="link" onClick={() => window.print()}>Imprimir</button>
+            <button className="link" onClick={() => window.print()}><Printer size={14} /> Imprimir</button>
           </div>
           <div className="carta-print moldura-carta">
             <img className="foto" src={selecionado.foto} alt={selecionado.nome} />
@@ -798,7 +799,7 @@ export default function Home() {
             {selecionado.bioma && <p className="subtitulo">{selecionado.bioma}</p>}
           </div>
           <div className="botoes">
-            <button onClick={salvarCarta}>Salvar imagem</button>
+            <button onClick={salvarCarta}><Download size={16} /> Salvar Imagem</button>
           </div>
         </section>
       )}
@@ -826,7 +827,7 @@ export default function Home() {
                 <p>{selecionado.historia}</p>
               </div>
               <button className="primario" onClick={() => falar(selecionado.historia!)}>
-                Ler em voz alta
+                <Play size={16} /> Ler em Voz Alta
               </button>
             </>
           )}
