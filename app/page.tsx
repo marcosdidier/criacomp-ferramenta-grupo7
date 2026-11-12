@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Etapa = "captura" | "gravacao" | "carregando" | "escolha" | "escolhido";
+type Etapa = "bestiario" | "captura" | "gravacao" | "carregando" | "escolha" | "detalhe";
 
 type Versao = {
   nome: string;
@@ -12,9 +12,17 @@ type Versao = {
   prompt_sprite: string;
 };
 
+type Bicho = Versao & { id: string; foto: string };
+
+const CHAVE_BESTIARIO = "bestiario-samuel";
+const INSTRUCAO_BESTIARIO_VAZIO = "Oi! Desenha um bicho pra gente começar!";
 const INSTRUCAO_CAPTURA = "Coloca o desenho dentro do quadrado.";
 const INSTRUCAO_GRAVACAO = "Agora me conta como é o seu bicho! Segure o botão e fala.";
 const INSTRUCAO_CARREGANDO = "Seu bicho está nascendo...";
+const MENSAGEM_LENTA = "O bicho está demorando pra nascer, espera mais um pouquinho.";
+const MENSAGEM_NAO_ENTENDI = "Hum, não entendi, me conta de novo?";
+const MENSAGEM_SERVIDOR = "O bestiário está dormindo, tenta daqui a pouco.";
+const TEMPO_LENTO_MS = 15000;
 
 async function falar(texto: string) {
   const resposta = await fetch("/api/falar", {
@@ -28,18 +36,30 @@ async function falar(texto: string) {
 }
 
 export default function Home() {
-  const [etapa, setEtapa] = useState<Etapa>("captura");
+  const [etapa, setEtapa] = useState<Etapa>("bestiario");
+  const [bichos, setBichos] = useState<Bicho[]>([]);
+  const [selecionado, setSelecionado] = useState<Bicho | null>(null);
   const [foto, setFoto] = useState<string | null>(null);
   const [transcricao, setTranscricao] = useState<string | null>(null);
   const [versoes, setVersoes] = useState<Versao[]>([]);
   const [escolhida, setEscolhida] = useState<Versao | null>(null);
   const [gravando, setGravando] = useState(false);
+  const [lento, setLento] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const trechosRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    const salvo = localStorage.getItem(CHAVE_BESTIARIO);
+    if (salvo) {
+      setBichos(JSON.parse(salvo));
+    } else {
+      falar(INSTRUCAO_BESTIARIO_VAZIO);
+    }
+  }, []);
 
   useEffect(() => {
     if (etapa !== "captura" || foto) return;
@@ -49,7 +69,11 @@ export default function Home() {
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
       })
-      .catch(() => setErro("Não achei a câmera. Permita o acesso e tente de novo."));
+      .catch(() => {
+        const mensagem = "Não achei a câmera. Permita o acesso e tente de novo.";
+        setErro(mensagem);
+        falar(mensagem);
+      });
     falar(INSTRUCAO_CAPTURA);
     return () => streamRef.current?.getTracks().forEach((t) => t.stop());
   }, [etapa, foto]);
@@ -58,6 +82,19 @@ export default function Home() {
     if (etapa === "gravacao") falar(INSTRUCAO_GRAVACAO);
     if (etapa === "carregando") falar(INSTRUCAO_CARREGANDO);
   }, [etapa]);
+
+  useEffect(() => {
+    if (etapa !== "carregando") return;
+    setLento(false);
+    const timer = setTimeout(() => setLento(true), TEMPO_LENTO_MS);
+    return () => clearTimeout(timer);
+  }, [etapa]);
+
+  function novoBicho() {
+    setErro(null);
+    setFoto(null);
+    setEtapa("captura");
+  }
 
   function tirarFoto() {
     const video = videoRef.current;
@@ -76,22 +113,29 @@ export default function Home() {
       const form = new FormData();
       form.append("audio", new File([audio], "fala.webm", { type: audio.type }));
       const transcrito = await fetch("/api/transcrever", { method: "POST", body: form });
+      if (!transcrito.ok) throw new Error("servidor");
       const { texto } = await transcrito.json();
-      if (!transcrito.ok) throw new Error(texto ?? "falha na transcrição");
+      if (!texto?.trim()) {
+        setErro(MENSAGEM_NAO_ENTENDI);
+        falar(MENSAGEM_NAO_ENTENDI);
+        setEtapa("gravacao");
+        return;
+      }
 
       const interpretado = await fetch("/api/interpretar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ foto, transcricao: texto }),
       });
+      if (!interpretado.ok) throw new Error("servidor");
       const dados = await interpretado.json();
-      if (!interpretado.ok) throw new Error(dados.erro ?? "falha na interpretação");
 
       setTranscricao(texto);
       setVersoes(dados.versoes);
       setEtapa("escolha");
-    } catch (e) {
-      setErro(`Algo deu errado: ${e instanceof Error ? e.message : "erro desconhecido"}`);
+    } catch {
+      setErro(MENSAGEM_SERVIDOR);
+      falar(MENSAGEM_SERVIDOR);
       setEtapa("gravacao");
     }
   }
@@ -121,11 +165,20 @@ export default function Home() {
     setGravando(false);
   }
 
-  function refazerFoto() {
-    setFoto(null);
-    setVersoes([]);
+  function escolher(versao: Versao) {
+    if (!foto) return;
+    const novo: Bicho = { ...versao, id: crypto.randomUUID(), foto };
+    const novos = [...bichos, novo];
+    setBichos(novos);
+    localStorage.setItem(CHAVE_BESTIARIO, JSON.stringify(novos));
+    setSelecionado(novo);
     setEscolhida(null);
-    setEtapa("captura");
+    setEtapa("detalhe");
+  }
+
+  function abrirBicho(bicho: Bicho) {
+    setSelecionado(bicho);
+    setEtapa("detalhe");
   }
 
   return (
@@ -133,10 +186,30 @@ export default function Home() {
       <h1>O bestiário do Samuel</h1>
       {erro && <p role="alert">{erro}</p>}
 
+      {etapa === "bestiario" && (
+        <section>
+          {bichos.length === 0 ? (
+            <p>{INSTRUCAO_BESTIARIO_VAZIO}</p>
+          ) : (
+            <div className="cartas">
+              {bichos.map((b) => (
+                <button key={b.id} className="carta" onClick={() => abrirBicho(b)}>
+                  <img src={b.foto} alt={b.nome} />
+                  <span className="nome">{b.nome}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="botoes">
+            <button className="primario" onClick={novoBicho}>Novo bicho</button>
+          </div>
+        </section>
+      )}
+
       {etapa === "captura" && !foto && (
         <section>
           <div className="linha-voltar">
-            <span />
+            <button className="link" onClick={() => setEtapa("bestiario")}>‹ Voltar</button>
             <button className="link" onClick={() => falar(INSTRUCAO_CAPTURA)}>ouvir</button>
           </div>
           <div className="moldura">
@@ -159,7 +232,7 @@ export default function Home() {
           </div>
           <div className="botoes">
             <button className="primario" onClick={() => setEtapa("gravacao")}>Usar esta foto</button>
-            <button onClick={refazerFoto}>Tirar de novo</button>
+            <button onClick={novoBicho}>Tirar de novo</button>
           </div>
         </section>
       )}
@@ -167,8 +240,8 @@ export default function Home() {
       {etapa === "gravacao" && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={refazerFoto}>‹ Voltar</button>
-            <button className="link" onClick={refazerFoto}>Refazer foto</button>
+            <button className="link" onClick={novoBicho}>‹ Voltar</button>
+            <button className="link" onClick={novoBicho}>Refazer foto</button>
           </div>
           {foto && <img className="miniatura" src={foto} alt="Foto do desenho" />}
           <p>{INSTRUCAO_GRAVACAO}</p>
@@ -193,7 +266,7 @@ export default function Home() {
         <section>
           <div className="ovo" />
           <div className="progresso"><span /></div>
-          <p>{INSTRUCAO_CARREGANDO}</p>
+          <p>{lento ? MENSAGEM_LENTA : INSTRUCAO_CARREGANDO}</p>
         </section>
       )}
 
@@ -217,7 +290,7 @@ export default function Home() {
           </div>
           {escolhida && (
             <div className="botoes">
-              <button className="primario" onClick={() => setEtapa("escolhido")}>
+              <button className="primario" onClick={() => escolher(escolhida)}>
                 Escolher {escolhida.nome}
               </button>
             </div>
@@ -225,27 +298,27 @@ export default function Home() {
           {transcricao && <p className="subtitulo">Você disse: &ldquo;{transcricao}&rdquo;</p>}
           <div className="botoes">
             <button onClick={() => setEtapa("gravacao")}>Contar de novo</button>
-            <button onClick={refazerFoto}>Redesenhar</button>
+            <button onClick={novoBicho}>Redesenhar</button>
           </div>
         </section>
       )}
 
-      {etapa === "escolhido" && escolhida && (
+      {etapa === "detalhe" && selecionado && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={() => setEtapa("escolha")}>‹ Voltar</button>
+            <button className="link" onClick={() => setEtapa("bestiario")}>‹ Bestiário</button>
           </div>
-          {foto && <img className="miniatura" src={foto} alt="Foto do desenho" />}
-          <h2 className="cabecalho-bicho">{escolhida.nome}</h2>
-          <p className="subtitulo">{escolhida.corpo}</p>
+          <img className="miniatura" src={selecionado.foto} alt={selecionado.nome} />
+          <h2 className="cabecalho-bicho">{selecionado.nome}</h2>
+          <p className="subtitulo">{selecionado.corpo}</p>
           <div className="tags">
-            {escolhida.comportamentos.map((c) => (
+            {selecionado.comportamentos.map((c) => (
               <span key={c} className="tag">{c}</span>
             ))}
           </div>
           <p className="subtitulo">O sprite animado ainda não está ligado nesta tela.</p>
           <div className="botoes">
-            <button className="primario" onClick={refazerFoto}>Começar outro bicho</button>
+            <button className="primario" onClick={novoBicho}>Novo bicho</button>
           </div>
         </section>
       )}
