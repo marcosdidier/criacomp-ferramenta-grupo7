@@ -19,7 +19,8 @@ export async function POST(req: Request) {
       model: "gpt-image-1-mini",
       prompt: `Pixel art sprite for a children's game bestiary. 64x64 style upscaled. Side view, single creature, vibrant colors, transparent background, no ground, no shadow. Clean pixel edges. ${prompt}`,
       n: 1,
-      size: "256x256",
+      size: "1024x1024",
+      output_format: "webp",
       background: "transparent",
     });
 
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
     // b64_json em 256x256 e bem menor (~100-200KB)
     if (item.b64_json) {
-      return Response.json({ imagem: `data:image/png;base64,${item.b64_json}` });
+      return Response.json({ imagem: `data:image/webp;base64,${item.b64_json}` });
     }
     if (item.url) {
       return Response.json({ imagem: item.url });
