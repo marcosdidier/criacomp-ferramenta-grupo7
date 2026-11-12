@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const openai = new OpenAI();
     const response = await openai.images.generate({
       model: "gpt-image-1-mini",
-      prompt: `Pixel art sprite for a children's game bestiary. 64x64 style upscaled. Side view, single creature, vibrant colors, transparent background, no ground, no shadow. Clean pixel edges. ${prompt}`,
+      prompt: `16-bit pixel art game sprite, retro RPG style like Pokemon or Stardew Valley. ONLY the creature, absolutely nothing else — no background, no ground, no shadow, no scenery, no environment, no grass, no platform. The creature floats centered on a completely transparent empty canvas. Crisp pixel edges, vibrant saturated colors, cute proportions. ${prompt}`,
       n: 1,
       size: "1024x1024",
       output_format: "webp",

@@ -967,6 +967,7 @@ export default function Home() {
           <div className="carta-print carta-game">
             <div className="carta-topo">
               <span className="carta-tipo">{selecionado.bioma ?? "Criatura"}</span>
+              <span className="carta-tipo">#{(bichos.findIndex(b => b.id === selecionado.id) + 1).toString().padStart(3, "0")}</span>
             </div>
             <div className="carta-img-area">
               <img src={imagemDo(selecionado)} alt={selecionado.nome} className="sprite-img" />
