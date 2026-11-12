@@ -33,6 +33,25 @@ type Bicho = Versao & {
 
 const APP_TOKEN = process.env.NEXT_PUBLIC_APP_SECRET ?? "";
 
+function classeAnimacao(comportamentos: string[]): string {
+  const primeiro = (comportamentos[0] ?? "").toLowerCase();
+  if (primeiro.includes("voa") || primeiro.includes("flutua")) return "anima-voa";
+  if (primeiro.includes("nada") || primeiro.includes("mergulh")) return "anima-nada";
+  if (primeiro.includes("corre") || primeiro.includes("rápid") || primeiro.includes("veloz")) return "anima-corre";
+  if (primeiro.includes("fogo") || primeiro.includes("lava") || primeiro.includes("cospe")) return "anima-fogo";
+  return "anima-padrao";
+}
+
+function tipoBioma(nome: string): string {
+  const n = nome.toLowerCase();
+  if (n.includes("água") || n.includes("lago") || n.includes("mar") || n.includes("rio") || n.includes("oceano")) return "agua";
+  if (n.includes("fogo") || n.includes("lava") || n.includes("vulc")) return "fogo";
+  if (n.includes("floresta") || n.includes("selva") || n.includes("mata") || n.includes("jardim") || n.includes("cogumelo")) return "floresta";
+  if (n.includes("gelo") || n.includes("neve") || n.includes("frio") || n.includes("glacial")) return "gelo";
+  if (n.includes("noite") || n.includes("escur") || n.includes("sombr") || n.includes("caverna")) return "noite";
+  return "default";
+}
+
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
   return { "x-app-token": APP_TOKEN, ...extra };
 }
@@ -356,12 +375,16 @@ export default function Home() {
               return grupos;
             }, {}),
           ).map(([bioma, lista]) => (
-            <div key={bioma} className="bioma">
+            <div key={bioma} className="bioma" data-bioma-tipo={tipoBioma(bioma)}>
               <h2>{bioma}</h2>
               <div className="cartas">
                 {lista.map((b) => (
-                  <button key={b.id} className="carta" onClick={() => abrirBicho(b)}>
-                    <img src={b.foto} alt={b.nome} />
+                  <button key={b.id} className={`carta ${classeAnimacao(b.comportamentos)}`} onClick={() => abrirBicho(b)}>
+                    {b.sprite ? (
+                      <img src={b.sprite} alt={b.nome} className="sprite-img" />
+                    ) : (
+                      <img className={b.spriteFallback ? "silhueta" : ""} src={b.foto} alt={b.nome} />
+                    )}
                     <span className="nome">{b.nome}</span>
                   </button>
                 ))}
