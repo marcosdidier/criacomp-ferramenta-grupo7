@@ -224,22 +224,29 @@ export default function Home() {
   function tirarFoto() {
     const video = videoRef.current;
     if (!video) return;
+    // Aguarda o vídeo ter dimensões reais (celulares podem demorar)
+    const vw = video.videoWidth || video.clientWidth || 640;
+    const vh = video.videoHeight || video.clientHeight || 480;
+    if (vw < 10 || vh < 10) {
+      setErro("A câmera ainda está carregando. Tente de novo.");
+      return;
+    }
     const canvas = document.createElement("canvas");
-    // Reduz para max 480px — funciona em qualquer dispositivo, IA não precisa mais
-    const maxLado = 480;
-    const vw = video.videoWidth || 640;
-    const vh = video.videoHeight || 480;
+    const maxLado = 400;
     const escala = Math.min(maxLado / vw, maxLado / vh, 1);
     canvas.width = Math.round(vw * escala);
     canvas.height = Math.round(vh * escala);
-    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
-    // Comprime até caber no serverless (<500KB base64)
-    let qualidade = 0.6;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Comprime agressivamente para funcionar em qualquer rede
+    let qualidade = 0.5;
     let resultado = canvas.toDataURL("image/jpeg", qualidade);
-    while (resultado.length > 500_000 && qualidade > 0.2) {
+    while (resultado.length > 300_000 && qualidade > 0.15) {
       qualidade -= 0.1;
       resultado = canvas.toDataURL("image/jpeg", qualidade);
     }
+    console.log(`Foto: ${canvas.width}x${canvas.height}, quality=${qualidade.toFixed(1)}, size=${(resultado.length/1024).toFixed(0)}KB`);
     setFoto(resultado);
   }
 
@@ -248,12 +255,20 @@ export default function Home() {
     setPassoLoading(0);
     setErro(null);
     try {
+      if (!foto) throw new Error("sem foto");
+
       // Passo 0: Transcrição
       falar(ETAPAS_LOADING[0]);
       const form = new FormData();
-      form.append("audio", new File([audio], "fala.webm", { type: audio.type }));
+      // Extensão correta por mime type (iOS grava mp4, Android webm)
+      const ext = audio.type.includes("mp4") ? "mp4" : audio.type.includes("ogg") ? "ogg" : "webm";
+      form.append("audio", new File([audio], `fala.${ext}`, { type: audio.type || "audio/webm" }));
       const transcrito = await fetch("/api/transcrever", { method: "POST", headers: authHeaders(), body: form });
-      if (!transcrito.ok) throw new Error("servidor");
+      if (!transcrito.ok) {
+        const errBody = await transcrito.text().catch(() => "");
+        console.error("transcrever falhou:", transcrito.status, errBody);
+        throw new Error("servidor");
+      }
       const { texto } = await transcrito.json();
       if (!texto?.trim()) {
         setErro(MENSAGEM_NAO_ENTENDI);
@@ -265,14 +280,37 @@ export default function Home() {
       // Passo 1: Interpretação
       setPassoLoading(1);
       falar(ETAPAS_LOADING[1]);
+
+      // Comprimir foto se ainda for grande (safety net)
+      let fotoEnvio = foto;
+      if (fotoEnvio.length > 500_000) {
+        const img = new Image();
+        img.src = fotoEnvio;
+        await new Promise((r) => { img.onload = r; img.onerror = r; });
+        const c = document.createElement("canvas");
+        const maxL = 320;
+        const esc = Math.min(maxL / img.width, maxL / img.height, 1);
+        c.width = Math.round(img.width * esc);
+        c.height = Math.round(img.height * esc);
+        c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
+        fotoEnvio = c.toDataURL("image/jpeg", 0.4);
+      }
+
       const interpretado = await fetch("/api/interpretar", {
         method: "POST",
         headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ foto, transcricao: texto }),
+        body: JSON.stringify({ foto: fotoEnvio, transcricao: texto }),
       });
-      if (!interpretado.ok) throw new Error("servidor");
+      if (!interpretado.ok) {
+        const errBody = await interpretado.text().catch(() => "");
+        console.error("interpretar falhou:", interpretado.status, errBody);
+        throw new Error("servidor");
+      }
       const dados = await interpretado.json();
-      if (!dados.versoes?.length) throw new Error("servidor");
+      if (!dados.versoes?.length) {
+        console.error("interpretar sem versoes:", dados);
+        throw new Error("servidor");
+      }
 
       // Passo 2: Inventando versões
       setPassoLoading(2);
@@ -309,8 +347,9 @@ export default function Home() {
       falar("Escolhe o seu favorito!");
       setEtapa("escolha");
     } catch (e) {
-      console.error("processar falhou:", e);
-      setErro(MENSAGEM_SERVIDOR);
+      const msg = e instanceof Error ? e.message : "desconhecido";
+      console.error("processar falhou:", msg, e);
+      setErro(`${MENSAGEM_SERVIDOR} (${msg})`);
       falar(MENSAGEM_SERVIDOR);
       setEtapa("gravacao");
     }
@@ -320,7 +359,10 @@ export default function Home() {
     pararVoz();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      // Escolhe formato suportado (iOS não suporta webm)
+      const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg", ""];
+      const mimeType = mimeTypes.find((m) => !m || MediaRecorder.isTypeSupported(m)) ?? "";
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       trechosRef.current = [];
       recorder.ondataavailable = (e) => trechosRef.current.push(e.data);
       recorder.onstop = () => {
