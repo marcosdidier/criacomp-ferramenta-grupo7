@@ -907,8 +907,8 @@ export default function Home() {
             {versoes.map((v) => (
               <button
                 key={v.nome}
-                className={`carta carta-escolha ${escolhida?.nome === v.nome ? "selecionada" : ""}`}
-                onClick={() => setEscolhida(v)}
+                className="carta carta-escolha"
+                onClick={() => escolher(v)}
               >
                 {v.imagem_preview ? (
                   <img src={v.imagem_preview} alt={v.nome} className="preview-img" />
@@ -928,13 +928,6 @@ export default function Home() {
               </button>
             ))}
           </div>
-          {escolhida && (
-            <div className="botoes">
-              <button className="primario" onClick={() => escolher(escolhida)}>
-                Escolher {escolhida.nome}
-              </button>
-            </div>
-          )}
           {transcricao && <p className="subtitulo">Você disse: &ldquo;{transcricao}&rdquo;</p>}
           <div className="botoes">
             <button onClick={() => setEtapa("gravacao")}><Mic size={16} /> Contar de Novo</button>
