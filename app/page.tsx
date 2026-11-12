@@ -243,7 +243,7 @@ export default function Home() {
         return;
       }
 
-      // Passo 1-2: Interpretação
+      // Passo 1: Interpretação
       setPassoLoading(1);
       falar(ETAPAS_LOADING[1]);
       const interpretado = await fetch("/api/interpretar", {
@@ -255,30 +255,40 @@ export default function Home() {
       const dados = await interpretado.json();
       if (!dados.versoes?.length) throw new Error("servidor");
 
-      // Mostra escolha imediatamente com texto, sprites carregam em background
-      setPassoLoading(3);
-      const versoesIniciais = dados.versoes as Versao[];
-      setTranscricao(texto);
-      setVersoes(versoesIniciais);
-      falar("Escolhe o seu favorito! As imagens estão chegando...");
-      setEtapa("escolha");
+      // Passo 2: Inventando versões
+      setPassoLoading(2);
+      falar(ETAPAS_LOADING[2]);
 
-      // Gerar sprites em background (cada uma aparece conforme fica pronta)
-      versoesIniciais.forEach(async (v, i) => {
-        try {
-          const resp = await fetch("/api/gerar-imagem", {
-            method: "POST",
-            headers: authHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({ prompt: v.prompt_sprite }),
-          });
-          if (resp.ok) {
-            const { imagem } = await resp.json();
-            setVersoes((prev) =>
-              prev.map((pv, pi) => pi === i ? { ...pv, imagem_preview: imagem } : pv)
-            );
-          }
-        } catch { /* fallback sem imagem */ }
-      });
+      // Passo 3: Gerando sprites (bloqueia até todas ficarem prontas)
+      setPassoLoading(3);
+      falar(ETAPAS_LOADING[3]);
+      const versoesComSprite = await Promise.all(
+        (dados.versoes as Versao[]).map(async (v) => {
+          try {
+            const resp = await fetch("/api/gerar-imagem", {
+              method: "POST",
+              headers: authHeaders({ "Content-Type": "application/json" }),
+              body: JSON.stringify({ prompt: v.prompt_sprite }),
+            });
+            if (resp.ok) {
+              const { imagem } = await resp.json();
+              return { ...v, imagem_preview: imagem };
+            }
+          } catch { /* fallback sem imagem */ }
+          return v;
+        }),
+      );
+
+      // Passo 4: Pronto
+      setPassoLoading(4);
+      falar(ETAPAS_LOADING[4]);
+      setTranscricao(texto);
+      setVersoes(versoesComSprite);
+
+      // Pequena pausa dramática antes de mostrar
+      await new Promise((r) => setTimeout(r, 800));
+      falar("Escolhe o seu favorito!");
+      setEtapa("escolha");
     } catch (e) {
       console.error("processar falhou:", e);
       setErro(MENSAGEM_SERVIDOR);
@@ -836,16 +846,19 @@ export default function Home() {
 
       {etapa === "carregando" && (
         <section className="tela-loading">
-          <div className="ovo" />
+          <div className={`ovo-container ovo-fase-${Math.min(passoLoading, 4)}`}>
+            <div className="ovo" />
+            {passoLoading >= 2 && <div className="ovo-racha ovo-racha-1" />}
+            {passoLoading >= 3 && <div className="ovo-racha ovo-racha-2" />}
+            {passoLoading >= 3 && <div className="ovo-racha ovo-racha-3" />}
+            {passoLoading >= 4 && <div className="ovo-brilho" />}
+          </div>
+          <p className="loading-msg">{ETAPAS_LOADING[Math.min(passoLoading, 4)]}</p>
           <div className="loading-passos">
-            {ETAPAS_LOADING.map((msg, i) => (
-              <div key={i} className={`loading-passo ${i < passoLoading ? "feito" : i === passoLoading ? "ativo" : ""}`}>
-                <span className="loading-icone">{i < passoLoading ? "\u2713" : i === passoLoading ? "\u25CF" : "\u25CB"}</span>
-                <span>{msg}</span>
-              </div>
+            {ETAPAS_LOADING.map((_, i) => (
+              <div key={i} className={`loading-dot ${i < passoLoading ? "feito" : i === passoLoading ? "ativo" : ""}`} />
             ))}
           </div>
-          <div className="progresso"><span /></div>
         </section>
       )}
 
