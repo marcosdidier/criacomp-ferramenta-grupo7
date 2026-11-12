@@ -14,10 +14,19 @@ export async function POST(req: Request) {
   }
 
   try {
+    const variacoes = [
+      "Add a surprising twist: an unexpected accessory, unusual marking, or quirky detail that makes this creature unique and memorable.",
+      "Give this creature extra personality: an exaggerated expression, a fun pose, or a small detail that tells a story.",
+      "Make it slightly wilder than expected: bolder colors, more dynamic shape, or an extra feature that surprises.",
+      "Add charm: a tiny imperfection, an asymmetric detail, or something that makes it feel handmade and alive.",
+      "Reimagine it playfully: stretch proportions, add sparkle or glow effects, make it feel magical.",
+    ];
+    const variacao = variacoes[Math.floor(Math.random() * variacoes.length)];
+
     const openai = new OpenAI();
     const response = await openai.images.generate({
       model: "gpt-image-1-mini",
-      prompt: `16-bit pixel art game sprite, retro RPG style like Pokemon or Stardew Valley. ONLY the creature, absolutely nothing else — no background, no ground, no shadow, no scenery, no environment, no grass, no platform. The creature floats centered on a completely transparent empty canvas. Crisp pixel edges, vibrant saturated colors, cute proportions. ${prompt}`,
+      prompt: `16-bit pixel art game sprite, retro RPG style like Pokemon or Stardew Valley. ONLY the creature, absolutely nothing else — no background, no ground, no shadow, no scenery, no environment, no grass, no platform. The creature floats centered on a completely transparent empty canvas. Crisp pixel edges, vibrant saturated colors, cute proportions. ${variacao} ${prompt}`,
       n: 1,
       size: "1024x1024",
       output_format: "webp",

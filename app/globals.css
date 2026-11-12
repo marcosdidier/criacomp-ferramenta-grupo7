@@ -549,43 +549,40 @@ button.link {
   font-style: italic;
 }
 
-/* Atributos em grid 2 colunas */
+/* Atributos empilhados com espaço */
 .carta-atributos {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0;
   padding: 0;
   border-top: 2.5px solid #e2e0d8;
 }
 
 .carta-attr {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-bottom: 1px solid #f0efe9;
 }
 
-.carta-attr:nth-child(odd) {
-  border-right: 1px solid #f0efe9;
-}
-
-.carta-attr:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-  border-right: none;
+.carta-attr:last-child {
+  border-bottom: none;
 }
 
 .carta-attr-label {
-  font-size: 0.55rem;
+  display: block;
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.2px;
   color: var(--vermelho);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .carta-attr-valor {
-  font-size: 0.8rem;
+  display: block;
+  font-size: 0.85rem;
   font-weight: 400;
   color: var(--preto);
-  line-height: 1.35;
+  line-height: 1.45;
 }
 
 /* Rodapé */
@@ -1094,7 +1091,9 @@ button.link.perigo:hover {
 .zoo-mapa {
   position: relative;
   width: 100%;
-  height: 520px;
+  height: 70vh;
+  min-height: 500px;
+  max-height: 700px;
   border-radius: var(--raio);
   overflow: hidden;
   background: url('/zoo-bg.png') center/cover no-repeat;

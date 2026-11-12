@@ -559,7 +559,7 @@ export default function Home() {
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
     const novas: typeof posicoes = {};
-    const MAPA_W = 580, GRAMA_TOPO = 200, MAPA_H = 420;
+    const MAPA_W = 600, GRAMA_TOPO = 240, MAPA_H = 560;
     bichos.forEach((b) => {
       if (!posRef.current[b.id]) {
         novas[b.id] = {
@@ -582,7 +582,7 @@ export default function Home() {
   // Loop de animação do zoológico
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
-    const MAPA_W = 580, GRAMA_TOPO = 200, MAPA_H = 420, SPRITE_SZ = 64, DIST_DIALOGO = 80;
+    const MAPA_W = 600, GRAMA_TOPO = 240, MAPA_H = 560, SPRITE_SZ = 80, DIST_DIALOGO = 100;
 
     const intervalo = setInterval(() => {
       if (dialogoAtivo.current) return;
