@@ -19,20 +19,19 @@ export async function POST(req: Request) {
       model: "gpt-image-1-mini",
       prompt: `Pixel art sprite for a children's game bestiary. 64x64 style upscaled. Side view, single creature, vibrant colors, transparent background, no ground, no shadow. Clean pixel edges. ${prompt}`,
       n: 1,
-      size: "512x512",
+      size: "256x256",
       background: "transparent",
     });
 
     const item = response.data?.[0];
     if (!item) throw new Error("sem imagem na resposta");
 
+    // b64_json em 256x256 e bem menor (~100-200KB)
     if (item.b64_json) {
       return Response.json({ imagem: `data:image/png;base64,${item.b64_json}` });
     }
     if (item.url) {
-      const imgResp = await fetch(item.url);
-      const buffer = Buffer.from(await imgResp.arrayBuffer());
-      return Response.json({ imagem: `data:image/png;base64,${buffer.toString("base64")}` });
+      return Response.json({ imagem: item.url });
     }
     throw new Error("sem dados na resposta");
   } catch (e) {

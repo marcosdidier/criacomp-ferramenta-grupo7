@@ -255,32 +255,30 @@ export default function Home() {
       const dados = await interpretado.json();
       if (!dados.versoes?.length) throw new Error("servidor");
 
-      // Passo 3: Geração de imagens
-      setPassoLoading(2);
-      falar(ETAPAS_LOADING[2]);
+      // Mostra escolha imediatamente com texto, sprites carregam em background
       setPassoLoading(3);
-      const versoesComImagem = await Promise.all(
-        (dados.versoes as Versao[]).map(async (v) => {
-          try {
-            const resp = await fetch("/api/gerar-imagem", {
-              method: "POST",
-              headers: authHeaders({ "Content-Type": "application/json" }),
-              body: JSON.stringify({ prompt: v.prompt_sprite }),
-            });
-            if (resp.ok) {
-              const { imagem } = await resp.json();
-              return { ...v, imagem_preview: imagem };
-            }
-          } catch { /* fallback sem imagem */ }
-          return v;
-        }),
-      );
-
-      setPassoLoading(4);
+      const versoesIniciais = dados.versoes as Versao[];
       setTranscricao(texto);
-      setVersoes(versoesComImagem);
-      falar("Pronto! Escolhe o seu favorito!");
+      setVersoes(versoesIniciais);
+      falar("Escolhe o seu favorito! As imagens estão chegando...");
       setEtapa("escolha");
+
+      // Gerar sprites em background (cada uma aparece conforme fica pronta)
+      versoesIniciais.forEach(async (v, i) => {
+        try {
+          const resp = await fetch("/api/gerar-imagem", {
+            method: "POST",
+            headers: authHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ prompt: v.prompt_sprite }),
+          });
+          if (resp.ok) {
+            const { imagem } = await resp.json();
+            setVersoes((prev) =>
+              prev.map((pv, pi) => pi === i ? { ...pv, imagem_preview: imagem } : pv)
+            );
+          }
+        } catch { /* fallback sem imagem */ }
+      });
     } catch (e) {
       console.error("processar falhou:", e);
       setErro(MENSAGEM_SERVIDOR);
