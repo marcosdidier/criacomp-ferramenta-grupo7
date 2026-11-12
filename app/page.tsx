@@ -675,16 +675,32 @@ export default function Home() {
       )}
 
       {etapa === "historia" && selecionado && (
-        <section>
+        <section className="tela-historia">
           <div className="linha-voltar">
-            <button className="link" onClick={() => setEtapa("detalhe")}>‹ {selecionado.nome}</button>
+            <button className="link" onClick={() => setEtapa("detalhe")}>&#8249; {selecionado.nome}</button>
           </div>
+          {(selecionado.sprite || selecionado.imagem_preview) && (
+            <img
+              className={`miniatura ${selecionado.sprite ? "sprite-img" : ""}`}
+              src={selecionado.sprite ?? selecionado.imagem_preview}
+              alt={selecionado.nome}
+            />
+          )}
           <h2 className="cabecalho-bicho">A história do {selecionado.nome}</h2>
           {historiaErro && <p role="alert">{historiaErro}</p>}
           {!selecionado.historia && !historiaErro && (
             <p className="subtitulo">Contando a história...</p>
           )}
-          {selecionado.historia && <p>{selecionado.historia}</p>}
+          {selecionado.historia && (
+            <>
+              <div className="bloco-historia">
+                <p>{selecionado.historia}</p>
+              </div>
+              <button className="primario" onClick={() => falar(selecionado.historia!)}>
+                Ler em voz alta
+              </button>
+            </>
+          )}
           {selecionado.transcricao && (
             <div className="bloco-fala">
               <span className="subtitulo">O que você contou</span>

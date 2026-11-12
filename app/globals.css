@@ -667,6 +667,28 @@ button.link {
   gap: 16px;
 }
 
+/* ── História ─────────────────────────────────────── */
+
+.tela-historia {
+  gap: 16px;
+}
+
+.bloco-historia {
+  width: 100%;
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  text-align: left;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.bloco-historia p {
+  font-size: 1.15rem;
+  line-height: 1.7;
+  font-weight: 400;
+  margin: 0;
+}
+
 /* ── Transições ───────────────────────────────────── */
 
 section {
