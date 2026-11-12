@@ -640,7 +640,31 @@ export default function Home() {
             <span>{bichos.length} criaturas</span>
           </div>
           <div className="zoo-mapa">
-            <div className="zoo-grama" />
+            <div className="zoo-cenario">
+              <div className="zoo-ceu" />
+              <div className="zoo-nuvem zoo-nuvem-1" />
+              <div className="zoo-nuvem zoo-nuvem-2" />
+              <div className="zoo-nuvem zoo-nuvem-3" />
+              <div className="zoo-montanha" />
+              <div className="zoo-montanha zoo-montanha-2" />
+              <div className="zoo-chao" />
+              <div className="zoo-lago" />
+              <div className="zoo-arvore zoo-arvore-1" />
+              <div className="zoo-arvore zoo-arvore-2" />
+              <div className="zoo-arvore zoo-arvore-3" />
+              <div className="zoo-arbusto zoo-arbusto-1" />
+              <div className="zoo-arbusto zoo-arbusto-2" />
+              <div className="zoo-arbusto zoo-arbusto-3" />
+              <div className="zoo-arbusto zoo-arbusto-4" />
+              <div className="zoo-caminho" />
+              <div className="zoo-flor zoo-flor-1" />
+              <div className="zoo-flor zoo-flor-2" />
+              <div className="zoo-flor zoo-flor-3" />
+              <div className="zoo-flor zoo-flor-4" />
+              <div className="zoo-flor zoo-flor-5" />
+              <div className="zoo-pedra zoo-pedra-1" />
+              <div className="zoo-pedra zoo-pedra-2" />
+            </div>
             {bichos.map((b) => {
               const pos = posicoes[b.id];
               if (!pos) return null;
