@@ -347,7 +347,11 @@ export default function Home() {
             <div className="cartas">
               {bichos.map((b) => (
                 <button key={b.id} className="carta" onClick={() => abrirBicho(b)}>
-                  <img src={b.foto} alt={b.nome} />
+                  {b.sprite ? (
+                    <img src={b.sprite} alt={b.nome} className="sprite-img" />
+                  ) : (
+                    <img className={b.spriteFallback ? "silhueta" : ""} src={b.foto} alt={b.nome} />
+                  )}
                   <span className="nome">{b.nome}</span>
                 </button>
               ))}
