@@ -14,14 +14,42 @@ export async function POST(req: Request) {
   }
 
   try {
-    const variacoes = [
-      "Add a surprising twist: an unexpected accessory, unusual marking, or quirky detail that makes this creature unique and memorable.",
-      "Give this creature extra personality: an exaggerated expression, a fun pose, or a small detail that tells a story.",
-      "Make it slightly wilder than expected: bolder colors, more dynamic shape, or an extra feature that surprises.",
-      "Add charm: a tiny imperfection, an asymmetric detail, or something that makes it feel handmade and alive.",
-      "Reimagine it playfully: stretch proportions, add sparkle or glow effects, make it feel magical.",
+    const estilos = [
+      "chibi style with oversized head and tiny body",
+      "fierce battle-ready pose with glowing eyes",
+      "sleepy and relaxed, curled up cutely",
+      "mid-jump with motion blur on limbs",
+      "wearing a tiny crown and looking regal",
+      "baby version with huge innocent eyes",
+      "armored with leaf or stone plates",
+      "ghostly translucent with glowing outline",
+      "muscular and heroic with cape flowing",
+      "fluffy and round like a plushie",
     ];
-    const variacao = variacoes[Math.floor(Math.random() * variacoes.length)];
+    const cores = [
+      "with neon accent highlights",
+      "in warm sunset color palette (orange, pink, gold)",
+      "in cool ocean tones (teal, cyan, deep blue)",
+      "with rainbow iridescent shimmer",
+      "in earthy natural tones (moss, clay, bark)",
+      "with high contrast black and bright accent",
+      "in pastel candy colors",
+      "with fire and lava color accents (red, orange, black)",
+    ];
+    const detalhes = [
+      "Add sparkle particles around it.",
+      "Give it a tiny companion creature on its shoulder.",
+      "Add elemental effects: small flames, water drops, or leaves floating.",
+      "Make its eyes glow with inner light.",
+      "Add pixel art motion lines showing speed or energy.",
+      "Give it an unusual hat or accessory.",
+      "Add a magical aura or energy ring.",
+      "Make one feature exaggeratedly large (ears, tail, horns).",
+    ];
+    const estilo = estilos[Math.floor(Math.random() * estilos.length)];
+    const cor = cores[Math.floor(Math.random() * cores.length)];
+    const detalhe = detalhes[Math.floor(Math.random() * detalhes.length)];
+    const variacao = `${estilo}, ${cor}. ${detalhe}`;
 
     const openai = new OpenAI();
     const response = await openai.images.generate({

@@ -1147,24 +1147,25 @@ button.link.perigo:hover {
 
 .zoo-balao {
   position: absolute;
-  bottom: calc(100% + 4px);
+  bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   background: #fff;
   color: var(--preto);
-  border-radius: 8px;
-  padding: 4px 12px;
-  font-size: 0.7rem;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
   font-weight: 500;
-  max-width: 200px;
-  min-width: 80px;
+  width: max-content;
+  max-width: 220px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.35;
   animation: balao-entra 0.3s ease-out;
+  z-index: 20;
+  pointer-events: none;
 }
 
 @keyframes balao-entra {
@@ -1180,6 +1181,29 @@ button.link.perigo:hover {
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: #fff;
+}
+
+.zoo-balao.balao-esq {
+  left: 0;
+  transform: translateX(-20%);
+}
+
+.zoo-balao.balao-esq::after {
+  left: 25%;
+}
+
+.zoo-balao.balao-dir {
+  left: 100%;
+  transform: translateX(-80%);
+}
+
+.zoo-balao.balao-dir::after {
+  left: 75%;
+}
+
+.zoo-balao p {
+  margin: 0;
+  font-size: 0.72rem;
 }
 
 .zoo-pensando {

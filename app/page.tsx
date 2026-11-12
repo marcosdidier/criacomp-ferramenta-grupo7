@@ -790,6 +790,7 @@ export default function Home() {
               const pos = posicoes[b.id];
               if (!pos) return null;
               const emDialogo = parDialogo?.includes(b.id);
+              const ehPrimeiroDoPar = parDialogo?.[0] === b.id;
               return (
                 <div
                   key={b.id}
@@ -800,12 +801,12 @@ export default function Home() {
                   <img src={imagemDo(b)} alt={b.nome} className="sprite-img" />
                   <span className="zoo-nome">{b.nome}</span>
                   {emDialogo && dialogoFalas.length > 0 && (
-                    <div className="zoo-balao">
+                    <div className={`zoo-balao ${ehPrimeiroDoPar ? "balao-esq" : "balao-dir"}`}>
                       {dialogoFalas
                         .filter((f) => f.autor === b.nome)
-                        .slice(0, 1)
+                        .slice(0, 2)
                         .map((f, i) => (
-                          <span key={i}>{f.texto}</span>
+                          <p key={i} style={{ margin: i > 0 ? "4px 0 0" : "0" }}>{f.texto}</p>
                         ))}
                     </div>
                   )}
