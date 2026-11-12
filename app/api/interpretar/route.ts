@@ -8,6 +8,11 @@ Responda somente com JSON no formato:
 Gere exatamente 3 versões em português, fiéis ao desenho e à fala, sem inventar detalhes que não aparecem nos dois.
 "bioma" é o nome curto do lugar onde esse bicho mora, criado a partir da descrição dele (ex.: "Lago de Lava", "Floresta de Cogumelos"). Não escolha de uma lista fixa; cada bicho pode ter um bioma diferente.`;
 
+function limparJSON(texto: string): string {
+  const m = texto.match(/```(?:json)?\s*([\s\S]*?)```/);
+  return m ? m[1].trim() : texto.trim();
+}
+
 export async function POST(req: Request) {
   const { foto, transcricao } = (await req.json()) as {
     foto?: string;
@@ -17,22 +22,21 @@ export async function POST(req: Request) {
     return Response.json({ erro: "foto e transcricao são obrigatórias" }, { status: 400 });
   }
 
-  const openai = new OpenAI();
-  const resposta = await openai.responses.create({
-    model: "gpt-6-luna",
-    input: [
-      {
-        role: "user",
-        content: [
-          { type: "input_text", text: `${INSTRUCOES}\n\nDescrição da criança: "${transcricao}"` },
-          { type: "input_image", image_url: foto, detail: "auto" },
-        ],
-      },
-    ],
-  });
-
   try {
-    return Response.json(JSON.parse(resposta.output_text));
+    const openai = new OpenAI();
+    const resposta = await openai.responses.create({
+      model: "gpt-6-luna",
+      input: [
+        {
+          role: "user",
+          content: [
+            { type: "input_text", text: `${INSTRUCOES}\n\nDescrição da criança: "${transcricao}"` },
+            { type: "input_image", image_url: foto, detail: "auto" },
+          ],
+        },
+      ],
+    });
+    return Response.json(JSON.parse(limparJSON(resposta.output_text)));
   } catch {
     return Response.json({ erro: "resposta inválida da IA" }, { status: 502 });
   }

@@ -15,16 +15,19 @@ export async function POST(req: Request) {
     return Response.json({ erro: "texto é obrigatório" }, { status: 400 });
   }
 
-  const openai = new OpenAI();
-  const audio = await openai.audio.speech.create({
-    model: "gpt-4o-mini-tts",
-    voice: "marin",
-    input: texto,
-    instructions: VIBE,
-    response_format: "mp3",
-  });
-
-  return new Response(audio.body, {
-    headers: { "Content-Type": "audio/mpeg" },
-  });
+  try {
+    const openai = new OpenAI();
+    const audio = await openai.audio.speech.create({
+      model: "gpt-4o-mini-tts",
+      voice: "marin",
+      input: texto,
+      instructions: VIBE,
+      response_format: "mp3",
+    });
+    return new Response(audio.body, {
+      headers: { "Content-Type": "audio/mpeg" },
+    });
+  } catch {
+    return Response.json({ erro: "falha na voz" }, { status: 502 });
+  }
 }

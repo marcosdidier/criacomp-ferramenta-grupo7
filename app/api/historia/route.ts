@@ -29,11 +29,14 @@ export async function POST(req: Request) {
     .filter(Boolean)
     .join("\n");
 
-  const openai = new OpenAI();
-  const resposta = await openai.responses.create({
-    model: "gpt-6-luna",
-    input: `${INSTRUCOES}\n\n${descricao}`,
-  });
-
-  return Response.json({ historia: resposta.output_text.trim() });
+  try {
+    const openai = new OpenAI();
+    const resposta = await openai.responses.create({
+      model: "gpt-6-luna",
+      input: `${INSTRUCOES}\n\n${descricao}`,
+    });
+    return Response.json({ historia: resposta.output_text.trim() });
+  } catch {
+    return Response.json({ erro: "falha ao gerar história" }, { status: 502 });
+  }
 }

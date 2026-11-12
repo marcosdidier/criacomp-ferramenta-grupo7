@@ -40,26 +40,33 @@ const MENSAGEM_SERVIDOR = "O bestiário está dormindo, tenta daqui a pouco.";
 const TEMPO_LENTO_MS = 15000;
 
 let vozAtual: HTMLAudioElement | null = null;
-let vozId = 0;
+let abortVoz: AbortController | null = null;
 
 function pararVoz() {
-  vozId++;
+  abortVoz?.abort();
+  abortVoz = null;
   vozAtual?.pause();
   vozAtual = null;
 }
 
 async function falar(texto: string) {
   pararVoz();
-  const id = vozId;
-  const resposta = await fetch("/api/falar", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ texto }),
-  });
-  if (!resposta.ok || id !== vozId) return;
-  const audio = new Audio(URL.createObjectURL(await resposta.blob()));
-  vozAtual = audio;
-  await audio.play().catch(() => {});
+  const controller = new AbortController();
+  abortVoz = controller;
+  try {
+    const resposta = await fetch("/api/falar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texto }),
+      signal: controller.signal,
+    });
+    if (!resposta.ok) return;
+    const audio = new Audio(URL.createObjectURL(await resposta.blob()));
+    vozAtual = audio;
+    await audio.play().catch(() => {});
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") return;
+  }
 }
 
 export default function Home() {
@@ -122,6 +129,9 @@ export default function Home() {
   function novoBicho() {
     setErro(null);
     setFoto(null);
+    setTranscricao(null);
+    setVersoes([]);
+    setEscolhida(null);
     setEtapa("captura");
   }
 
