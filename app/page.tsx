@@ -60,6 +60,10 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
   return { "x-app-token": APP_TOKEN, ...extra };
 }
 
+function imagemDo(b: { sprite?: string; imagem_preview?: string; foto: string }): string {
+  return b.imagem_preview ?? b.sprite ?? b.foto;
+}
+
 const CHAVE_BESTIARIO = "bestiario-samuel";
 const INSTRUCAO_BESTIARIO_VAZIO = "Oi! Desenha um bicho pra gente começar!";
 const INSTRUCAO_CAPTURA = "Coloca o desenho dentro do quadrado.";
@@ -143,9 +147,12 @@ export default function Home() {
   const [historiaErro, setHistoriaErro] = useState<string | null>(null);
   const [slideTutorial, setSlideTutorial] = useState(0);
   const [celebrando, setCelebrando] = useState(false);
-  const [primeiroParaDialogo, setPrimeiroParaDialogo] = useState<Bicho | null>(null);
   const [dialogoFalas, setDialogoFalas] = useState<{autor: string; texto: string}[]>([]);
   const [dialogoCarregando, setDialogoCarregando] = useState(false);
+  const [posicoes, setPosicoes] = useState<Record<string, {x: number; y: number; dx: number; dy: number}>>({});
+  const [parDialogo, setParDialogo] = useState<[string, string] | null>(null);
+  const dialogoAtivo = useRef(false);
+  const posRef = useRef(posicoes);
   const gerandoHistoria = useRef(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -364,7 +371,8 @@ export default function Home() {
       link.href = canvas.toDataURL("image/png");
       link.click();
     };
-    imagem.src = selecionado.foto;
+    imagem.crossOrigin = "anonymous";
+    imagem.src = imagemDo(selecionado);
   }
 
   async function gerarSprite(bicho: Bicho) {
@@ -440,17 +448,86 @@ export default function Home() {
     }
   }
 
-  function toqueZoo(bicho: Bicho) {
-    if (primeiroParaDialogo && primeiroParaDialogo.id !== bicho.id) {
-      gerarDialogo(primeiroParaDialogo, bicho);
-      setPrimeiroParaDialogo(null);
-    } else if (primeiroParaDialogo?.id === bicho.id) {
-      setPrimeiroParaDialogo(null);
-      abrirBicho(bicho);
-    } else {
-      setPrimeiroParaDialogo(bicho);
-    }
-  }
+  // Inicializar posições dos sprites quando entra no zoológico
+  useEffect(() => {
+    if (etapa !== "zoologico" || bichos.length === 0) return;
+    const novas: typeof posicoes = {};
+    const MAPA_W = 580, MAPA_H = 400;
+    bichos.forEach((b) => {
+      if (!posRef.current[b.id]) {
+        novas[b.id] = {
+          x: 40 + Math.random() * (MAPA_W - 120),
+          y: 40 + Math.random() * (MAPA_H - 120),
+          dx: (Math.random() - 0.5) * 1.2,
+          dy: (Math.random() - 0.5) * 1.2,
+        };
+      } else {
+        novas[b.id] = posRef.current[b.id];
+      }
+    });
+    setPosicoes(novas);
+    posRef.current = novas;
+    dialogoAtivo.current = false;
+    setDialogoFalas([]);
+    setParDialogo(null);
+  }, [etapa, bichos.length]);
+
+  // Loop de animação do zoológico
+  useEffect(() => {
+    if (etapa !== "zoologico" || bichos.length === 0) return;
+    const MAPA_W = 580, MAPA_H = 400, SPRITE_SZ = 64, DIST_DIALOGO = 80;
+
+    const intervalo = setInterval(() => {
+      if (dialogoAtivo.current) return;
+
+      setPosicoes((prev) => {
+        const next = { ...prev };
+        for (const b of bichos) {
+          const p = next[b.id];
+          if (!p) continue;
+          let nx = p.x + p.dx;
+          let ny = p.y + p.dy;
+          let ndx = p.dx;
+          let ndy = p.dy;
+          if (nx < 0 || nx > MAPA_W - SPRITE_SZ) ndx = -ndx;
+          if (ny < 0 || ny > MAPA_H - SPRITE_SZ) ndy = -ndy;
+          nx = Math.max(0, Math.min(MAPA_W - SPRITE_SZ, nx));
+          ny = Math.max(0, Math.min(MAPA_H - SPRITE_SZ, ny));
+          next[b.id] = { x: nx, y: ny, dx: ndx, dy: ndy };
+        }
+
+        // Detecção de proximidade para diálogo automático
+        if (!dialogoAtivo.current && bichos.length >= 2) {
+          for (let i = 0; i < bichos.length; i++) {
+            for (let j = i + 1; j < bichos.length; j++) {
+              const pi = next[bichos[i].id];
+              const pj = next[bichos[j].id];
+              if (!pi || !pj) continue;
+              const dist = Math.hypot(pi.x - pj.x, pi.y - pj.y);
+              if (dist < DIST_DIALOGO) {
+                dialogoAtivo.current = true;
+                setParDialogo([bichos[i].id, bichos[j].id]);
+                gerarDialogo(bichos[i], bichos[j]).then(() => {
+                  setTimeout(() => {
+                    dialogoAtivo.current = false;
+                    setDialogoFalas([]);
+                    setParDialogo(null);
+                  }, 6000);
+                });
+                break;
+              }
+            }
+            if (dialogoAtivo.current) break;
+          }
+        }
+
+        posRef.current = next;
+        return next;
+      });
+    }, 50);
+
+    return () => clearInterval(intervalo);
+  }, [etapa, bichos]);
 
   return (
     <main>
@@ -509,13 +586,7 @@ export default function Home() {
             <div className="cartas">
               {bichos.map((b) => (
                 <button key={b.id} className="carta" onClick={() => abrirBicho(b)}>
-                  {b.sprite ? (
-                    <img src={b.sprite} alt={b.nome} className="sprite-img" />
-                  ) : b.imagem_preview ? (
-                    <img src={b.imagem_preview} alt={b.nome} />
-                  ) : (
-                    <img className={b.spriteFallback ? "silhueta" : ""} src={b.foto} alt={b.nome} />
-                  )}
+                  <img src={imagemDo(b)} alt={b.nome} className="sprite-img" />
                   <span className="nome">{b.nome}</span>
                 </button>
               ))}
@@ -565,59 +636,43 @@ export default function Home() {
       {etapa === "zoologico" && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={() => { setEtapa("bestiario"); setPrimeiroParaDialogo(null); setDialogoFalas([]); }}><ArrowLeft size={14} /> Bestiário</button>
+            <button className="link" onClick={() => setEtapa("bestiario")}><ArrowLeft size={14} /> Bestiário</button>
             <span>{bichos.length} criaturas</span>
           </div>
-          {primeiroParaDialogo && (
-            <div className="dialogo-instrucao">
-              <p>Toca em outro bicho pra eles conversarem!</p>
-              <button className="link" onClick={() => setPrimeiroParaDialogo(null)}>Cancelar</button>
-            </div>
-          )}
-          {dialogoCarregando && (
-            <p className="subtitulo">Os bichos estão pensando no que falar...</p>
-          )}
-          {Object.entries(
-            bichos.reduce<Record<string, Bicho[]>>((grupos, b) => {
-              const chave = b.bioma?.trim() || "Ainda sem bioma";
-              (grupos[chave] ??= []).push(b);
-              return grupos;
-            }, {}),
-          ).map(([bioma, lista]) => (
-            <div key={bioma} className="bioma" data-bioma-tipo={tipoBioma(bioma)}>
-              <h2>{bioma}</h2>
-              <div className="cartas">
-                {lista.map((b) => (
-                  <button
-                    key={b.id}
-                    className={`carta ${classeAnimacao(b.comportamentos)}${primeiroParaDialogo?.id === b.id ? " dialogo-selecionada" : ""}`}
-                    onClick={() => toqueZoo(b)}
-                  >
-                    {b.sprite ? (
-                      <img src={b.sprite} alt={b.nome} className="sprite-img" />
-                    ) : b.imagem_preview ? (
-                      <img src={b.imagem_preview} alt={b.nome} />
-                    ) : (
-                      <img className={b.spriteFallback ? "silhueta" : ""} src={b.foto} alt={b.nome} />
-                    )}
-                    <span className="nome">{b.nome}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-          {dialogoFalas.length > 0 && (
-            <div className="dialogo-overlay" onClick={() => setDialogoFalas([])}>
-              <div className="dialogo-baloes" onClick={(e) => e.stopPropagation()}>
-                {dialogoFalas.map((f, i) => (
-                  <div key={i} className={`balao ${f.autor === dialogoFalas[0].autor ? "esquerda" : "direita"}`}>
-                    <span className="balao-autor">{f.autor}</span>
-                    <span className="balao-texto">{f.texto}</span>
-                  </div>
-                ))}
-                <button className="link" onClick={() => setDialogoFalas([])}>Fechar</button>
-              </div>
-            </div>
+          <div className="zoo-mapa">
+            <div className="zoo-grama" />
+            {bichos.map((b) => {
+              const pos = posicoes[b.id];
+              if (!pos) return null;
+              const emDialogo = parDialogo?.includes(b.id);
+              return (
+                <div
+                  key={b.id}
+                  className={`zoo-criatura ${emDialogo ? "zoo-parada" : ""}`}
+                  style={{ left: pos.x, top: pos.y }}
+                  onClick={() => abrirBicho(b)}
+                >
+                  <img src={imagemDo(b)} alt={b.nome} className="sprite-img" />
+                  <span className="zoo-nome">{b.nome}</span>
+                  {emDialogo && dialogoFalas.length > 0 && (
+                    <div className="zoo-balao">
+                      {dialogoFalas
+                        .filter((f) => f.autor === b.nome)
+                        .slice(0, 1)
+                        .map((f, i) => (
+                          <span key={i}>{f.texto}</span>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {dialogoCarregando && (
+              <div className="zoo-pensando">Os bichos estão conversando...</div>
+            )}
+          </div>
+          {bichos.length < 2 && (
+            <p className="subtitulo">Crie mais bichos para vê-los conversar!</p>
           )}
         </section>
       )}
@@ -766,11 +821,7 @@ export default function Home() {
           <div className="linha-voltar">
             <button className="link" onClick={() => setEtapa("bestiario")}>‹ Bestiário</button>
           </div>
-          {selecionado.sprite ? (
-            <img className="miniatura sprite-img" src={selecionado.sprite} alt={selecionado.nome} />
-          ) : (
-            <img className={`miniatura${selecionado.spriteFallback ? " silhueta" : ""}`} src={selecionado.foto} alt={selecionado.nome} />
-          )}
+          <img className="miniatura sprite-img" src={imagemDo(selecionado)} alt={selecionado.nome} />
           <h2 className="cabecalho-bicho">{selecionado.nome}</h2>
           <p className="subtitulo">{selecionado.corpo}</p>
           <div className="tags">
@@ -797,7 +848,7 @@ export default function Home() {
             <button className="link" onClick={() => window.print()}><Printer size={14} /> Imprimir</button>
           </div>
           <div className="carta-print moldura-carta">
-            <img className="foto" src={selecionado.foto} alt={selecionado.nome} />
+            <img className="foto" src={imagemDo(selecionado)} alt={selecionado.nome} />
             <h2 className="cabecalho-bicho">{selecionado.nome}</h2>
             <p className="subtitulo">{selecionado.corpo}</p>
             {selecionado.bioma && <p className="subtitulo">{selecionado.bioma}</p>}
@@ -813,13 +864,7 @@ export default function Home() {
           <div className="linha-voltar">
             <button className="link" onClick={() => setEtapa("detalhe")}>&#8249; {selecionado.nome}</button>
           </div>
-          {(selecionado.sprite || selecionado.imagem_preview) && (
-            <img
-              className={`miniatura ${selecionado.sprite ? "sprite-img" : ""}`}
-              src={selecionado.sprite ?? selecionado.imagem_preview}
-              alt={selecionado.nome}
-            />
-          )}
+          <img className="miniatura sprite-img" src={imagemDo(selecionado)} alt={selecionado.nome} />
           <h2 className="cabecalho-bicho">A história do {selecionado.nome}</h2>
           {historiaErro && <p role="alert">{historiaErro}</p>}
           {!selecionado.historia && !historiaErro && (

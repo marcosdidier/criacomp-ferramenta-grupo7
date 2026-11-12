@@ -17,30 +17,24 @@ export async function POST(req: Request) {
     const openai = new OpenAI();
     const response = await openai.images.generate({
       model: "gpt-image-1-mini",
-      prompt: `Cute illustrated creature for a children's bestiary game, digital art style, simple and colorful, white background, single character, front-facing, friendly expression: ${prompt}`,
+      prompt: `Pixel art sprite for a children's game bestiary. 64x64 style upscaled. Side view, single creature, vibrant colors, transparent background, no ground, no shadow. Clean pixel edges. ${prompt}`,
       n: 1,
-      size: "1024x1024",
+      size: "512x512",
+      background: "transparent",
     });
 
     const item = response.data?.[0];
     if (!item) throw new Error("sem imagem na resposta");
 
-    // gpt-image retorna b64_json direto (não URL)
-    const b64 = item.b64_json ?? item.url;
-    if (!b64) throw new Error("sem dados na resposta");
-
-    // Se veio b64_json, usa direto. Se veio URL, faz fetch.
     if (item.b64_json) {
-      return Response.json({
-        imagem: `data:image/png;base64,${item.b64_json}`,
-      });
+      return Response.json({ imagem: `data:image/png;base64,${item.b64_json}` });
     }
-
-    const imgResp = await fetch(item.url!);
-    const buffer = Buffer.from(await imgResp.arrayBuffer());
-    return Response.json({
-      imagem: `data:image/png;base64,${buffer.toString("base64")}`,
-    });
+    if (item.url) {
+      const imgResp = await fetch(item.url);
+      const buffer = Buffer.from(await imgResp.arrayBuffer());
+      return Response.json({ imagem: `data:image/png;base64,${buffer.toString("base64")}` });
+    }
+    throw new Error("sem dados na resposta");
   } catch (e) {
     return Response.json(
       { erro: e instanceof Error ? e.message : "falha ao gerar imagem" },
