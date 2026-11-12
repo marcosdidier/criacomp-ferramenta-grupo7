@@ -67,7 +67,7 @@ const INSTRUCAO_CARREGANDO = "Seu bicho está nascendo...";
 const MENSAGEM_LENTA = "O bicho está demorando pra nascer, espera mais um pouquinho.";
 const MENSAGEM_NAO_ENTENDI = "Hum, não entendi, me conta de novo?";
 const MENSAGEM_SERVIDOR = "O bestiário está dormindo, tenta daqui a pouco.";
-const TEMPO_LENTO_MS = 15000;
+const TEMPO_LENTO_MS = 25000;
 
 let vozAtual: HTMLAudioElement | null = null;
 let abortVoz: AbortController | null = null;
@@ -226,8 +226,25 @@ export default function Home() {
       if (!interpretado.ok) throw new Error("servidor");
       const dados = await interpretado.json();
 
+      const versoesComImagem = await Promise.all(
+        (dados.versoes as Versao[]).map(async (v) => {
+          try {
+            const resp = await fetch("/api/gerar-imagem", {
+              method: "POST",
+              headers: authHeaders({ "Content-Type": "application/json" }),
+              body: JSON.stringify({ prompt: v.prompt_sprite }),
+            });
+            if (resp.ok) {
+              const { imagem } = await resp.json();
+              return { ...v, imagem_preview: imagem };
+            }
+          } catch { /* fallback sem imagem */ }
+          return v;
+        }),
+      );
+
       setTranscricao(texto);
-      setVersoes(dados.versoes);
+      setVersoes(versoesComImagem);
       setEtapa("escolha");
     } catch {
       setErro(MENSAGEM_SERVIDOR);
@@ -570,15 +587,28 @@ export default function Home() {
             <button className="link" onClick={() => setEtapa("gravacao")}>‹ Voltar</button>
           </div>
           <p>Qual você quer?</p>
-          <div className="cartas">
+          <div className="cartas escolha-cartas">
             {versoes.map((v) => (
               <button
                 key={v.nome}
-                className={`carta ${escolhida?.nome === v.nome ? "selecionada" : ""}`}
+                className={`carta carta-escolha ${escolhida?.nome === v.nome ? "selecionada" : ""}`}
                 onClick={() => setEscolhida(v)}
               >
-                <span className="resumo">{v.corpo}</span>
-                <span className="nome">{v.nome}</span>
+                {v.imagem_preview ? (
+                  <img src={v.imagem_preview} alt={v.nome} className="preview-img" />
+                ) : (
+                  <div className="preview-placeholder" />
+                )}
+                <div className="escolha-info">
+                  <span className="nome">{v.nome}</span>
+                  <span className="resumo">{v.corpo}</span>
+                  {v.bioma && <span className="tag destaque">{v.bioma}</span>}
+                  <div className="tags-mini">
+                    {v.comportamentos.map((c) => (
+                      <span key={c} className="tag-mini">{c}</span>
+                    ))}
+                  </div>
+                </div>
               </button>
             ))}
           </div>
