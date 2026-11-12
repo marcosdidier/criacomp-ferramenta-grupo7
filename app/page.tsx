@@ -178,10 +178,20 @@ export default function Home() {
   useEffect(() => {
     if (etapa !== "captura" || foto) return;
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } })
+      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } } })
       .then((stream) => {
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
+      })
+      .catch(() => {
+        // Fallback: tenta sem constraints específicas
+        return navigator.mediaDevices.getUserMedia({ video: true });
+      })
+      .then((stream) => {
+        if (stream && !streamRef.current) {
+          streamRef.current = stream;
+          if (videoRef.current) videoRef.current.srcObject = stream;
+        }
       })
       .catch(() => {
         const mensagem = "Não achei a câmera. Permita o acesso e tente de novo.";
@@ -215,13 +225,22 @@ export default function Home() {
     const video = videoRef.current;
     if (!video) return;
     const canvas = document.createElement("canvas");
-    // Reduz resolução para caber no limite do serverless (~50-150KB base64)
-    const maxLado = 640;
-    const escala = Math.min(maxLado / video.videoWidth, maxLado / video.videoHeight, 1);
-    canvas.width = Math.round(video.videoWidth * escala);
-    canvas.height = Math.round(video.videoHeight * escala);
+    // Reduz para max 480px — funciona em qualquer dispositivo, IA não precisa mais
+    const maxLado = 480;
+    const vw = video.videoWidth || 640;
+    const vh = video.videoHeight || 480;
+    const escala = Math.min(maxLado / vw, maxLado / vh, 1);
+    canvas.width = Math.round(vw * escala);
+    canvas.height = Math.round(vh * escala);
     canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
-    setFoto(canvas.toDataURL("image/jpeg", 0.6));
+    // Comprime até caber no serverless (<500KB base64)
+    let qualidade = 0.6;
+    let resultado = canvas.toDataURL("image/jpeg", qualidade);
+    while (resultado.length > 500_000 && qualidade > 0.2) {
+      qualidade -= 0.1;
+      resultado = canvas.toDataURL("image/jpeg", qualidade);
+    }
+    setFoto(resultado);
   }
 
   async function processar(audio: Blob) {
@@ -381,57 +400,72 @@ export default function Home() {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      // Fundo branco limpo
-      ctx.fillStyle = "#ffffff";
+      // Fundo escuro retro
+      ctx.fillStyle = "#1b1b2f";
       ctx.fillRect(0, 0, W, H);
 
-      // Triângulo colorido no canto superior esquerdo
-      ctx.fillStyle = "#d4152f";
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(60, 0);
-      ctx.lineTo(0, 60);
-      ctx.closePath();
-      ctx.fill();
+      // Borda pixel
+      ctx.strokeStyle = "#3a3a5c";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(4, 4, W - 8, H - 8);
 
-      // Tipo/bioma centralizado no topo
-      ctx.fillStyle = "#888";
-      ctx.font = "italic 13px system-ui, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(selecionado.bioma ?? "Criatura", W / 2, 28);
+      // Faixa vermelha no topo
+      ctx.fillStyle = "#c0392b";
+      ctx.fillRect(0, 0, W, 36);
+      ctx.fillStyle = "#922b21";
+      ctx.fillRect(0, 33, W, 3);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 11px system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText((selecionado.bioma ?? "CRIATURA").toUpperCase(), 14, 24);
+      ctx.textAlign = "right";
+      const num = (bichos.findIndex(b => b.id === selecionado.id) + 1).toString().padStart(3, "0");
+      ctx.fillText(`#${num}`, W - 14, 24);
 
-      // Área da imagem com fundo suave
-      ctx.fillStyle = "#f5f4ef";
-      ctx.beginPath();
-      ctx.roundRect(24, 44, W - 48, 280, 12);
-      ctx.fill();
+      // Área do sprite com fundo checkered
+      const checkY = 42;
+      const checkH = 240;
+      for (let cx = 8; cx < W - 8; cx += 16) {
+        for (let cy = checkY; cy < checkY + checkH; cy += 16) {
+          ctx.fillStyle = ((cx + cy) / 16) % 2 === 0 ? "#1b1b2f" : "#222240";
+          ctx.fillRect(cx, cy, 16, 16);
+        }
+      }
+      ctx.strokeStyle = "#3a3a5c";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(8, checkY, W - 16, checkH);
 
-      // Sprite pixel art
-      const imgSize = 220;
+      // Sprite
+      const imgSize = 180;
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(imagem, (W - imgSize) / 2, 74, imgSize, imgSize);
+      ctx.drawImage(imagem, (W - imgSize) / 2, checkY + 30, imgSize, imgSize);
 
-      // Nome em bold uppercase
-      ctx.fillStyle = "#161616";
-      ctx.font = "bold 28px system-ui, sans-serif";
+      // Nome dourado
+      ctx.fillStyle = "#f0c040";
+      ctx.font = "bold 26px system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(selecionado.nome.toUpperCase(), W / 2, 360);
+      ctx.shadowColor = "rgba(0,0,0,0.4)";
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+      ctx.fillText(selecionado.nome.toUpperCase(), W / 2, checkY + checkH + 36);
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
 
       // Descrição
-      ctx.fillStyle = "#5c5c5c";
-      ctx.font = "14px system-ui, sans-serif";
-      const descLinhas = selecionado.corpo.match(/.{1,45}/g) ?? [selecionado.corpo];
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = "italic 13px system-ui, sans-serif";
+      const descLinhas = selecionado.corpo.match(/.{1,50}/g) ?? [selecionado.corpo];
       descLinhas.slice(0, 2).forEach((linha, i) => {
-        ctx.fillText(linha, W / 2, 385 + i * 20);
+        ctx.fillText(linha, W / 2, checkY + checkH + 58 + i * 18);
       });
 
       // Separador
-      let y = 425;
-      ctx.strokeStyle = "#eee";
-      ctx.lineWidth = 1;
+      let y = checkY + checkH + 90;
+      ctx.strokeStyle = "#3a3a5c";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(30, y);
-      ctx.lineTo(W - 30, y);
+      ctx.moveTo(14, y);
+      ctx.lineTo(W - 14, y);
       ctx.stroke();
       y += 16;
 
@@ -444,34 +478,34 @@ export default function Home() {
       ];
       for (const [label, valor] of attrs) {
         if (!valor) continue;
-        ctx.fillStyle = "#d4152f";
-        ctx.font = "bold 10px system-ui, sans-serif";
+        ctx.fillStyle = "#e74c3c";
+        ctx.font = "bold 9px system-ui, sans-serif";
         ctx.textAlign = "left";
-        ctx.fillText(label.toUpperCase(), 30, y);
-        ctx.fillStyle = "#161616";
-        ctx.font = "13px system-ui, sans-serif";
-        const linhas = valor.match(/.{1,55}/g) ?? [valor];
+        ctx.fillText(label.toUpperCase(), 20, y);
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        ctx.font = "12px system-ui, sans-serif";
+        const linhas = valor.match(/.{1,58}/g) ?? [valor];
         linhas.slice(0, 2).forEach((l, i) => {
-          ctx.fillText(l, 30, y + 16 + i * 16);
+          ctx.fillText(l, 20, y + 15 + i * 15);
         });
-        y += 16 + Math.min(linhas.length, 2) * 16 + 12;
-        ctx.strokeStyle = "#eee";
-        ctx.beginPath();
-        ctx.moveTo(30, y - 4);
-        ctx.lineTo(W - 30, y - 4);
-        ctx.stroke();
+        y += 15 + Math.min(linhas.length, 2) * 15 + 14;
       }
 
       // Rodapé
-      ctx.fillStyle = "#f5f4ef";
-      ctx.fillRect(0, H - 32, W, 32);
-      ctx.fillStyle = "#aaa";
-      ctx.font = "bold 9px system-ui, sans-serif";
+      ctx.fillStyle = "#0f0f1e";
+      ctx.fillRect(0, H - 30, W, 30);
+      ctx.strokeStyle = "#3a3a5c";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, H - 30);
+      ctx.lineTo(W, H - 30);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.font = "bold 8px system-ui, sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText("BESTIARIO DO SAMUEL", 16, H - 12);
+      ctx.fillText("BESTIARIO DO SAMUEL", 14, H - 10);
       ctx.textAlign = "right";
-      const num = (bichos.findIndex(b => b.id === selecionado.id) + 1).toString().padStart(3, "0");
-      ctx.fillText(`#${num}`, W - 16, H - 12);
+      ctx.fillText(`#${num}`, W - 14, H - 10);
 
       const link = document.createElement("a");
       link.download = `${selecionado.nome}.png`;

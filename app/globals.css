@@ -470,28 +470,28 @@ button.link {
 
 /* ── Carta estilo Unstable Unicorns ────────────────── */
 
-/* Carta de coleção — inspirada em Unstable Unicorns */
+/* Carta de coleção — estética retro pixel art */
 
 .carta-game {
   width: 100%;
-  max-width: 440px;
+  max-width: 400px;
   margin: 0 auto;
-  background: #fff;
-  border-radius: 16px;
+  background: #1b1b2f;
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-  color: var(--preto);
+  box-shadow: 0 0 0 3px #3a3a5c, 0 0 0 6px #1b1b2f, 0 8px 32px rgba(0,0,0,0.3);
+  color: #e8e6df;
   position: relative;
-  border: 2.5px solid #e2e0d8;
+  image-rendering: pixelated;
 }
 
-/* Faixa colorida no topo — tipo da criatura */
 .carta-topo {
-  background: var(--vermelho);
-  padding: 6px 16px;
+  background: linear-gradient(90deg, #c0392b, #e74c3c, #c0392b);
+  padding: 8px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom: 3px solid #922b21;
 }
 
 .carta-topo::before {
@@ -499,68 +499,76 @@ button.link {
 }
 
 .carta-tipo {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   color: #fff;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
   font-style: normal;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
 }
 
-/* Layout principal: sprite grande no topo */
 .carta-img-area {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   background:
-    repeating-conic-gradient(#faf9f5 0% 25%, #f2f1eb 0% 50%) 0 0 / 24px 24px;
-  border-bottom: 2.5px solid #e2e0d8;
+    repeating-conic-gradient(#1b1b2f 0% 25%, #222240 0% 50%) 0 0 / 16px 16px;
+  border-bottom: 3px solid #3a3a5c;
+  position: relative;
+}
+
+.carta-img-area::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 2px dashed rgba(255,255,255,0.08);
+  border-radius: 4px;
 }
 
 .carta-img-area img {
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 0 16px rgba(232,78,60,0.3));
 }
 
-/* Nome e descrição */
 .carta-nome {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 800;
   text-align: center;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 14px 16px 2px;
+  letter-spacing: 2px;
+  padding: 14px 14px 4px;
   margin: 0;
-  color: var(--preto);
+  color: #f0c040;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.4);
 }
 
 .carta-corpo {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: center;
-  padding: 2px 20px 12px;
-  color: var(--texto-secundario);
+  padding: 0 16px 10px;
+  color: rgba(255,255,255,0.6);
   font-weight: 400;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.45;
   font-style: italic;
 }
 
-/* Atributos empilhados com espaço */
 .carta-atributos {
   display: flex;
   flex-direction: column;
   gap: 0;
   padding: 0;
-  border-top: 2.5px solid #e2e0d8;
+  border-top: 3px solid #3a3a5c;
 }
 
 .carta-attr {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f0efe9;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .carta-attr:last-child {
@@ -569,34 +577,34 @@ button.link {
 
 .carta-attr-label {
   display: block;
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--vermelho);
-  margin-bottom: 4px;
+  letter-spacing: 1.5px;
+  color: #e74c3c;
+  margin-bottom: 3px;
 }
 
 .carta-attr-valor {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 400;
-  color: var(--preto);
-  line-height: 1.45;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.4;
 }
 
-/* Rodapé */
 .carta-rodape {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 14px;
-  background: var(--preto);
-  font-size: 0.55rem;
-  color: rgba(255,255,255,0.5);
-  font-weight: 600;
+  padding: 7px 14px;
+  background: #0f0f1e;
+  font-size: 0.5rem;
+  color: rgba(255,255,255,0.3);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
+  border-top: 3px solid #3a3a5c;
 }
 
 .bloco-fala {
@@ -1144,16 +1152,18 @@ button.link.perigo:hover {
   transform: translateX(-50%);
   background: #fff;
   color: var(--preto);
-  border-radius: 10px;
-  padding: 5px 10px;
+  border-radius: 8px;
+  padding: 4px 12px;
   font-size: 0.7rem;
   font-weight: 500;
-  max-width: 140px;
-  min-width: 60px;
+  max-width: 200px;
+  min-width: 80px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  white-space: normal;
-  line-height: 1.3;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
   animation: balao-entra 0.3s ease-out;
 }
 
