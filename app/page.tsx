@@ -135,20 +135,30 @@ export default function Home() {
 
       {etapa === "captura" && !foto && (
         <section>
-          <p>{INSTRUCAO_CAPTURA}</p>
-          <video ref={videoRef} autoPlay playsInline muted width={480} />
-          <div>
-            <button onClick={tirarFoto}>Tirar foto</button>
-            <button onClick={() => falar(INSTRUCAO_CAPTURA)}>Ouvir de novo</button>
+          <div className="linha-voltar">
+            <span />
+            <button className="link" onClick={() => falar(INSTRUCAO_CAPTURA)}>ouvir</button>
           </div>
+          <div className="moldura">
+            <div className="guia">
+              <video ref={videoRef} autoPlay playsInline muted />
+            </div>
+          </div>
+          <p className="instrucao">
+            <span className="ondas"><span /><span /><span /></span>
+            {INSTRUCAO_CAPTURA}
+          </p>
+          <button className="obturador" onClick={tirarFoto} aria-label="Tirar foto" />
         </section>
       )}
 
       {etapa === "captura" && foto && (
         <section>
-          <img src={foto} alt="Foto do desenho" width={320} />
-          <div>
-            <button onClick={() => setEtapa("gravacao")}>Usar esta foto</button>
+          <div className="moldura">
+            <img className="foto" src={foto} alt="Foto do desenho" />
+          </div>
+          <div className="botoes">
+            <button className="primario" onClick={() => setEtapa("gravacao")}>Usar esta foto</button>
             <button onClick={refazerFoto}>Tirar de novo</button>
           </div>
         </section>
@@ -156,59 +166,87 @@ export default function Home() {
 
       {etapa === "gravacao" && (
         <section>
-          {foto && <img src={foto} alt="Foto do desenho" width={120} />}
+          <div className="linha-voltar">
+            <button className="link" onClick={refazerFoto}>‹ Voltar</button>
+            <button className="link" onClick={refazerFoto}>Refazer foto</button>
+          </div>
+          {foto && <img className="miniatura" src={foto} alt="Foto do desenho" />}
           <p>{INSTRUCAO_GRAVACAO}</p>
           {gravando ? (
-            <button onPointerUp={pararGravacao} onPointerLeave={pararGravacao}>
-              Soltar para terminar
+            <button
+              className="gravar gravando"
+              onPointerUp={pararGravacao}
+              onPointerLeave={pararGravacao}
+            >
+              Soltar
             </button>
           ) : (
-            <button onPointerDown={iniciarGravacao}>Segurar para falar</button>
+            <button className="gravar" onPointerDown={iniciarGravacao}>
+              Segure para falar
+            </button>
           )}
-          <div>
-            <button onClick={() => falar(INSTRUCAO_GRAVACAO)}>Ouvir de novo</button>
-            <button onClick={refazerFoto}>Refazer foto</button>
-          </div>
+          <button className="link" onClick={() => falar(INSTRUCAO_GRAVACAO)}>ouvir de novo</button>
         </section>
       )}
 
       {etapa === "carregando" && (
         <section>
+          <div className="ovo" />
+          <div className="progresso"><span /></div>
           <p>{INSTRUCAO_CARREGANDO}</p>
         </section>
       )}
 
       {etapa === "escolha" && (
         <section>
-          <p>Olha só! Nasceram três bichos. Qual você escolhe?</p>
-          {transcricao && <p>Você disse: &ldquo;{transcricao}&rdquo;</p>}
-          <ul>
+          <div className="linha-voltar">
+            <button className="link" onClick={() => setEtapa("gravacao")}>‹ Voltar</button>
+          </div>
+          <p>Qual você quer?</p>
+          <div className="cartas">
             {versoes.map((v) => (
-              <li key={v.nome}>
-                <h2>{v.nome}</h2>
-                <p>Corpo: {v.corpo}</p>
-                <p>Cores: {v.cores.join(", ")}</p>
-                <p>Comportamentos: {v.comportamentos.join(", ")}</p>
-                <button
-                  onClick={() => {
-                    setEscolhida(v);
-                    setEtapa("escolhido");
-                  }}
-                >
-                  Escolher {v.nome}
-                </button>
-              </li>
+              <button
+                key={v.nome}
+                className={`carta ${escolhida?.nome === v.nome ? "selecionada" : ""}`}
+                onClick={() => setEscolhida(v)}
+              >
+                <span className="resumo">{v.corpo}</span>
+                <span className="nome">{v.nome}</span>
+              </button>
             ))}
-          </ul>
-          <button onClick={refazerFoto}>Redesenhar</button>
+          </div>
+          {escolhida && (
+            <div className="botoes">
+              <button className="primario" onClick={() => setEtapa("escolhido")}>
+                Escolher {escolhida.nome}
+              </button>
+            </div>
+          )}
+          {transcricao && <p className="subtitulo">Você disse: &ldquo;{transcricao}&rdquo;</p>}
+          <div className="botoes">
+            <button onClick={() => setEtapa("gravacao")}>Contar de novo</button>
+            <button onClick={refazerFoto}>Redesenhar</button>
+          </div>
         </section>
       )}
 
       {etapa === "escolhido" && escolhida && (
         <section>
-          <h2>{escolhida.nome} entrou no bestiário!</h2>
-          <p>O sprite animado ainda não está ligado nesta tela.</p>
-          <button onClick={refazerFoto}>Começar outro bicho</button>
+          <div className="linha-voltar">
+            <button className="link" onClick={() => setEtapa("escolha")}>‹ Voltar</button>
+          </div>
+          {foto && <img className="miniatura" src={foto} alt="Foto do desenho" />}
+          <h2 className="cabecalho-bicho">{escolhida.nome}</h2>
+          <p className="subtitulo">{escolhida.corpo}</p>
+          <div className="tags">
+            {escolhida.comportamentos.map((c) => (
+              <span key={c} className="tag">{c}</span>
+            ))}
+          </div>
+          <p className="subtitulo">O sprite animado ainda não está ligado nesta tela.</p>
+          <div className="botoes">
+            <button className="primario" onClick={refazerFoto}>Começar outro bicho</button>
+          </div>
         </section>
       )}
     </main>
