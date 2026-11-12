@@ -4,6 +4,20 @@ import { useEffect, useRef, useState } from "react";
 
 type Etapa = "captura" | "gravacao" | "pronto";
 
+const INSTRUCAO_CAPTURA = "Coloca o desenho dentro do quadrado.";
+const INSTRUCAO_GRAVACAO = "Agora me conta como é o seu bicho! Segure o botão e fala.";
+
+async function falar(texto: string) {
+  const resposta = await fetch("/api/falar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ texto }),
+  });
+  if (!resposta.ok) return;
+  const audio = new Audio(URL.createObjectURL(await resposta.blob()));
+  await audio.play().catch(() => {});
+}
+
 export default function Home() {
   const [etapa, setEtapa] = useState<Etapa>("captura");
   const [foto, setFoto] = useState<string | null>(null);
@@ -25,8 +39,13 @@ export default function Home() {
         if (videoRef.current) videoRef.current.srcObject = stream;
       })
       .catch(() => setErro("Não achei a câmera. Permita o acesso e tente de novo."));
+    falar(INSTRUCAO_CAPTURA);
     return () => streamRef.current?.getTracks().forEach((t) => t.stop());
   }, [etapa, foto]);
+
+  useEffect(() => {
+    if (etapa === "gravacao") falar(INSTRUCAO_GRAVACAO);
+  }, [etapa]);
 
   function tirarFoto() {
     const video = videoRef.current;
@@ -75,10 +94,11 @@ export default function Home() {
 
       {etapa === "captura" && !foto && (
         <section>
-          <p>Coloca o desenho dentro do quadrado.</p>
+          <p>{INSTRUCAO_CAPTURA}</p>
           <video ref={videoRef} autoPlay playsInline muted width={480} />
           <div>
             <button onClick={tirarFoto}>Tirar foto</button>
+            <button onClick={() => falar(INSTRUCAO_CAPTURA)}>Ouvir de novo</button>
           </div>
         </section>
       )}
@@ -96,7 +116,7 @@ export default function Home() {
       {etapa === "gravacao" && (
         <section>
           {foto && <img src={foto} alt="Foto do desenho" width={120} />}
-          <p>Agora me conta como é o seu bicho! Segure o botão e fala.</p>
+          <p>{INSTRUCAO_GRAVACAO}</p>
           {gravando ? (
             <button onPointerUp={pararGravacao} onPointerLeave={pararGravacao}>
               Soltar para terminar
@@ -105,6 +125,7 @@ export default function Home() {
             <button onPointerDown={iniciarGravacao}>Segurar para falar</button>
           )}
           <div>
+            <button onClick={() => falar(INSTRUCAO_GRAVACAO)}>Ouvir de novo</button>
             <button onClick={refazerFoto}>Refazer foto</button>
           </div>
         </section>
