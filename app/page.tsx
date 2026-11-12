@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PlusCircle, Map, Info, HelpCircle, ArrowLeft, Volume2, Camera, RefreshCw, Mic, BookOpen, Sparkles, Printer, Download, ChevronRight, Play } from "lucide-react";
+import { PlusCircle, Map, Info, HelpCircle, ArrowLeft, Volume2, Camera, RefreshCw, Mic, BookOpen, Sparkles, Printer, Download, ChevronRight, Play, Trash2 } from "lucide-react";
 
 type Etapa =
   | "tutorial"
@@ -321,6 +321,18 @@ export default function Home() {
     setSelecionado(atualizado);
   }
 
+  function removerBicho(id: string) {
+    setBichos((anteriores) => {
+      const novos = anteriores.filter((b) => b.id !== id);
+      localStorage.setItem(CHAVE_BESTIARIO, JSON.stringify(novos));
+      return novos;
+    });
+    if (selecionado?.id === id) {
+      setSelecionado(null);
+      setEtapa("bestiario");
+    }
+  }
+
   useEffect(() => {
     if (etapa !== "historia" || !selecionado || selecionado.historia || gerandoHistoria.current) return;
     gerandoHistoria.current = true;
@@ -452,12 +464,12 @@ export default function Home() {
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
     const novas: typeof posicoes = {};
-    const MAPA_W = 580, MAPA_H = 400;
+    const MAPA_W = 580, GRAMA_TOPO = 200, MAPA_H = 420;
     bichos.forEach((b) => {
       if (!posRef.current[b.id]) {
         novas[b.id] = {
-          x: 40 + Math.random() * (MAPA_W - 120),
-          y: 40 + Math.random() * (MAPA_H - 120),
+          x: 20 + Math.random() * (MAPA_W - 100),
+          y: GRAMA_TOPO + Math.random() * (MAPA_H - GRAMA_TOPO - 80),
           dx: (Math.random() - 0.5) * 1.2,
           dy: (Math.random() - 0.5) * 1.2,
         };
@@ -475,7 +487,7 @@ export default function Home() {
   // Loop de animação do zoológico
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
-    const MAPA_W = 580, MAPA_H = 400, SPRITE_SZ = 64, DIST_DIALOGO = 80;
+    const MAPA_W = 580, GRAMA_TOPO = 200, MAPA_H = 420, SPRITE_SZ = 64, DIST_DIALOGO = 80;
 
     const intervalo = setInterval(() => {
       if (dialogoAtivo.current) return;
@@ -490,9 +502,9 @@ export default function Home() {
           let ndx = p.dx;
           let ndy = p.dy;
           if (nx < 0 || nx > MAPA_W - SPRITE_SZ) ndx = -ndx;
-          if (ny < 0 || ny > MAPA_H - SPRITE_SZ) ndy = -ndy;
+          if (ny < GRAMA_TOPO || ny > MAPA_H - SPRITE_SZ) ndy = -ndy;
           nx = Math.max(0, Math.min(MAPA_W - SPRITE_SZ, nx));
-          ny = Math.max(0, Math.min(MAPA_H - SPRITE_SZ, ny));
+          ny = Math.max(GRAMA_TOPO, Math.min(MAPA_H - SPRITE_SZ, ny));
           next[b.id] = { x: nx, y: ny, dx: ndx, dy: ndy };
         }
 
@@ -583,11 +595,16 @@ export default function Home() {
               <p className="subtitulo">Desenha um bicho no papel, tira uma foto e conta pra gente como ele é. A IA vai dar vida a ele!</p>
             </div>
           ) : (
-            <div className="cartas">
+            <div className="colecao">
               {bichos.map((b) => (
-                <button key={b.id} className="carta" onClick={() => abrirBicho(b)}>
-                  <img src={imagemDo(b)} alt={b.nome} className="sprite-img" />
-                  <span className="nome">{b.nome}</span>
+                <button key={b.id} className="colecao-card" onClick={() => abrirBicho(b)}>
+                  <div className="colecao-img">
+                    <img src={imagemDo(b)} alt={b.nome} className="sprite-img" />
+                  </div>
+                  <div className="colecao-info">
+                    <span className="colecao-nome">{b.nome}</span>
+                    {b.bioma && <span className="colecao-bioma">{b.bioma}</span>}
+                  </div>
                 </button>
               ))}
             </div>
@@ -640,31 +657,6 @@ export default function Home() {
             <span>{bichos.length} criaturas</span>
           </div>
           <div className="zoo-mapa">
-            <div className="zoo-cenario">
-              <div className="zoo-ceu" />
-              <div className="zoo-nuvem zoo-nuvem-1" />
-              <div className="zoo-nuvem zoo-nuvem-2" />
-              <div className="zoo-nuvem zoo-nuvem-3" />
-              <div className="zoo-montanha" />
-              <div className="zoo-montanha zoo-montanha-2" />
-              <div className="zoo-chao" />
-              <div className="zoo-lago" />
-              <div className="zoo-arvore zoo-arvore-1" />
-              <div className="zoo-arvore zoo-arvore-2" />
-              <div className="zoo-arvore zoo-arvore-3" />
-              <div className="zoo-arbusto zoo-arbusto-1" />
-              <div className="zoo-arbusto zoo-arbusto-2" />
-              <div className="zoo-arbusto zoo-arbusto-3" />
-              <div className="zoo-arbusto zoo-arbusto-4" />
-              <div className="zoo-caminho" />
-              <div className="zoo-flor zoo-flor-1" />
-              <div className="zoo-flor zoo-flor-2" />
-              <div className="zoo-flor zoo-flor-3" />
-              <div className="zoo-flor zoo-flor-4" />
-              <div className="zoo-flor zoo-flor-5" />
-              <div className="zoo-pedra zoo-pedra-1" />
-              <div className="zoo-pedra zoo-pedra-2" />
-            </div>
             {bichos.map((b) => {
               const pos = posicoes[b.id];
               if (!pos) return null;
@@ -859,9 +851,12 @@ export default function Home() {
             <button onClick={() => setEtapa("historia")}><Sparkles size={16} /> História</button>
           </div>
           <div className="botoes">
-            <button onClick={() => setEtapa("zoologico")}>Zoológico</button>
+            <button onClick={() => setEtapa("zoologico")}><Map size={16} /> Zoológico</button>
             <button className="primario" onClick={novoBicho}><PlusCircle size={16} /> Novo Bicho</button>
           </div>
+          <button className="link perigo" onClick={() => { if (confirm(`Remover ${selecionado.nome} do bestiário?`)) removerBicho(selecionado.id); }}>
+            <Trash2 size={14} /> Remover do Bestiário
+          </button>
         </section>
       )}
 

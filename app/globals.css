@@ -451,6 +451,87 @@ button.link {
   animation: pulsa 1s ease-in-out infinite;
 }
 
+/* ── Coleção (cards do bestiário) ─────────────────── */
+
+.colecao {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.colecao-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px 10px;
+  border-radius: 16px;
+  background: #fff;
+  border: 2px solid #e8e6df;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-align: center;
+  gap: 6px;
+}
+
+.colecao-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.colecao-card:active {
+  transform: scale(0.97);
+}
+
+.colecao-img {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    repeating-conic-gradient(#f5f4ef 0% 25%, #ebe9e2 0% 50%) 0 0 / 16px 16px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.colecao-img img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.colecao-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.colecao-nome {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--preto);
+}
+
+.colecao-bioma {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--texto-secundario);
+}
+
+/* ── Botão perigo ─────────────────────────────────── */
+
+button.link.perigo {
+  color: var(--vermelho);
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+button.link.perigo:hover {
+  opacity: 1;
+}
+
 /* ── Bestiário vazio ──────────────────────────────── */
 
 .bestiario-vazio {
@@ -815,235 +896,9 @@ button.link {
   height: 480px;
   border-radius: var(--raio);
   overflow: hidden;
-  background: #87ceeb;
+  background: url('/zoo-bg.png') center/cover no-repeat;
+  image-rendering: pixelated;
 }
-
-/* ── Cenário ─────────────────────────────────────── */
-
-.zoo-cenario {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.zoo-ceu {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #7ec8e3 0%, #b5e3f5 40%, #d4edda 55%, #81c784 56%, #6abf69 100%);
-}
-
-/* Nuvens */
-.zoo-nuvem {
-  position: absolute;
-  background: rgba(255,255,255,0.85);
-  border-radius: 50px;
-  height: 20px;
-  animation: nuvem-passa linear infinite;
-}
-.zoo-nuvem-1 { width: 80px; top: 8%; left: 10%; animation-duration: 40s; }
-.zoo-nuvem-2 { width: 60px; top: 14%; left: 55%; animation-duration: 55s; animation-delay: -15s; }
-.zoo-nuvem-3 { width: 100px; top: 5%; left: 30%; animation-duration: 50s; animation-delay: -25s; opacity: 0.6; }
-
-@keyframes nuvem-passa {
-  0% { transform: translateX(-120px); }
-  100% { transform: translateX(700px); }
-}
-
-/* Montanhas */
-.zoo-montanha {
-  position: absolute;
-  bottom: 52%;
-  left: 5%;
-  width: 0;
-  height: 0;
-  border-left: 90px solid transparent;
-  border-right: 90px solid transparent;
-  border-bottom: 100px solid #8fbc8f;
-  opacity: 0.7;
-}
-.zoo-montanha::after {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: -20px;
-  width: 0; height: 0;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-bottom: 25px solid #f0f0f0;
-}
-.zoo-montanha-2 {
-  left: 60%;
-  border-left-width: 70px;
-  border-right-width: 70px;
-  border-bottom-width: 80px;
-  border-bottom-color: #7caa7c;
-  bottom: 50%;
-}
-
-/* Chão de grama */
-.zoo-chao {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 55%;
-  background:
-    linear-gradient(180deg, #6abf69 0%, #5cb85c 30%, #4cae4c 100%);
-}
-.zoo-chao::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 12px;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent 0px,
-    transparent 8px,
-    rgba(76,174,76,0.3) 8px,
-    rgba(76,174,76,0.3) 10px
-  );
-}
-
-/* Lago */
-.zoo-lago {
-  position: absolute;
-  bottom: 8%;
-  right: 8%;
-  width: 120px;
-  height: 50px;
-  background: radial-gradient(ellipse, #64b5f6 0%, #42a5f5 60%, #2196f3 100%);
-  border-radius: 50%;
-  box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);
-  animation: lago-brilho 4s ease-in-out infinite;
-}
-.zoo-lago::after {
-  content: "";
-  position: absolute;
-  top: 30%;
-  left: 20%;
-  width: 30%;
-  height: 20%;
-  background: rgba(255,255,255,0.3);
-  border-radius: 50%;
-}
-
-@keyframes lago-brilho {
-  0%, 100% { opacity: 0.9; }
-  50% { opacity: 1; }
-}
-
-/* Árvores */
-.zoo-arvore {
-  position: absolute;
-  width: 12px;
-  height: 40px;
-  background: #8d6e63;
-  border-radius: 2px;
-}
-.zoo-arvore::before {
-  content: "";
-  position: absolute;
-  top: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0; height: 0;
-  border-left: 22px solid transparent;
-  border-right: 22px solid transparent;
-  border-bottom: 35px solid #388e3c;
-}
-.zoo-arvore::after {
-  content: "";
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0; height: 0;
-  border-left: 18px solid transparent;
-  border-right: 18px solid transparent;
-  border-bottom: 28px solid #43a047;
-}
-.zoo-arvore-1 { bottom: 25%; left: 5%; }
-.zoo-arvore-2 { bottom: 35%; left: 88%; height: 35px; }
-.zoo-arvore-3 { bottom: 18%; left: 45%; height: 30px; }
-
-/* Arbustos */
-.zoo-arbusto {
-  position: absolute;
-  width: 30px;
-  height: 20px;
-  background: #4caf50;
-  border-radius: 50% 50% 20% 20%;
-}
-.zoo-arbusto::before {
-  content: "";
-  position: absolute;
-  top: -6px;
-  left: 20%;
-  width: 18px;
-  height: 14px;
-  background: #66bb6a;
-  border-radius: 50%;
-}
-.zoo-arbusto-1 { bottom: 10%; left: 15%; }
-.zoo-arbusto-2 { bottom: 22%; left: 70%; }
-.zoo-arbusto-3 { bottom: 40%; left: 30%; width: 24px; height: 16px; }
-.zoo-arbusto-4 { bottom: 5%; left: 50%; }
-
-/* Caminho de terra */
-.zoo-caminho {
-  position: absolute;
-  bottom: 0;
-  left: 30%;
-  width: 40%;
-  height: 52%;
-  background: linear-gradient(180deg, transparent 0%, rgba(161,136,108,0.4) 30%, rgba(161,136,108,0.6) 100%);
-  border-radius: 50% 50% 0 0;
-  clip-path: polygon(35% 0%, 65% 0%, 80% 100%, 20% 100%);
-}
-
-/* Flores */
-.zoo-flor {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-.zoo-flor::before {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  width: 2px;
-  height: 8px;
-  background: #388e3c;
-  transform: translateX(-50%);
-}
-.zoo-flor-1 { bottom: 14%; left: 22%; background: #f44336; }
-.zoo-flor-2 { bottom: 30%; left: 58%; background: #ff9800; }
-.zoo-flor-3 { bottom: 8%; left: 75%; background: #e91e63; }
-.zoo-flor-4 { bottom: 38%; left: 12%; background: #ffeb3b; }
-.zoo-flor-5 { bottom: 20%; left: 82%; background: #9c27b0; }
-
-/* Pedras */
-.zoo-pedra {
-  position: absolute;
-  background: #9e9e9e;
-  border-radius: 40% 50% 45% 55%;
-}
-.zoo-pedra::after {
-  content: "";
-  position: absolute;
-  top: 15%;
-  left: 15%;
-  width: 30%;
-  height: 25%;
-  background: rgba(255,255,255,0.2);
-  border-radius: 50%;
-}
-.zoo-pedra-1 { bottom: 3%; left: 35%; width: 24px; height: 16px; }
-.zoo-pedra-2 { bottom: 42%; right: 12%; width: 18px; height: 12px; }
 
 .zoo-criatura {
   position: absolute;
