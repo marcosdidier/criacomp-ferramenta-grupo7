@@ -24,6 +24,9 @@ type Versao = {
   bioma?: string;
   prompt_sprite: string;
   imagem_preview?: string;
+  origem?: string;
+  habilidade?: string;
+  curiosidade?: string;
 };
 
 type Bicho = Versao & {
@@ -175,7 +178,7 @@ export default function Home() {
   useEffect(() => {
     if (etapa !== "captura" || foto) return;
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment" } })
+      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } })
       .then((stream) => {
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
@@ -212,13 +215,13 @@ export default function Home() {
     const video = videoRef.current;
     if (!video) return;
     const canvas = document.createElement("canvas");
-    // Reduz resolução para caber no limite do serverless (max 800px no lado maior)
-    const maxLado = 800;
+    // Reduz resolução para caber no limite do serverless (~50-150KB base64)
+    const maxLado = 640;
     const escala = Math.min(maxLado / video.videoWidth, maxLado / video.videoHeight, 1);
     canvas.width = Math.round(video.videoWidth * escala);
     canvas.height = Math.round(video.videoHeight * escala);
     canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
-    setFoto(canvas.toDataURL("image/jpeg", 0.7));
+    setFoto(canvas.toDataURL("image/jpeg", 0.6));
   }
 
   async function processar(audio: Blob) {
@@ -363,21 +366,91 @@ export default function Home() {
     if (!selecionado) return;
     const imagem = new Image();
     imagem.onload = () => {
+      const W = 600, H = 900;
       const canvas = document.createElement("canvas");
-      canvas.width = 800;
-      canvas.height = 1000;
+      canvas.width = W;
+      canvas.height = H;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(imagem, 60, 60, 680, 560);
-      ctx.fillStyle = "#161616";
-      ctx.font = "bold 64px system-ui, sans-serif";
-      ctx.fillText(selecionado.nome, 60, 720);
-      ctx.font = "32px system-ui, sans-serif";
-      ctx.fillStyle = "#5c5c5c";
-      ctx.fillText(selecionado.corpo.slice(0, 40), 60, 790);
-      if (selecionado.bioma) ctx.fillText(selecionado.bioma, 60, 840);
+
+      // Fundo escuro
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#1a1a2e");
+      grad.addColorStop(1, "#16213e");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Borda dourada
+      ctx.strokeStyle = "#e8b730";
+      ctx.lineWidth = 4;
+      ctx.roundRect(2, 2, W - 4, H - 4, 16);
+      ctx.stroke();
+
+      // Barra tipo no topo
+      ctx.fillStyle = "#e8b730";
+      ctx.fillRect(0, 0, W, 32);
+      ctx.fillStyle = "#1a1a2e";
+      ctx.font = "bold 11px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText((selecionado.bioma ?? "CRIATURA").toUpperCase(), W / 2, 22);
+
+      // Imagem
+      const imgSize = 200;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(imagem, (W - imgSize) / 2, 52, imgSize, imgSize);
+
+      // Nome
+      ctx.fillStyle = "#e8b730";
+      ctx.font = "bold 36px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(selecionado.nome, W / 2, 300);
+
+      // Corpo
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.font = "16px system-ui, sans-serif";
+      ctx.fillText(selecionado.corpo.slice(0, 50), W / 2, 330);
+
+      // Atributos
+      let y = 370;
+      const attrs: [string, string | undefined][] = [
+        ["ORIGEM", selecionado.origem],
+        ["HABILIDADE", selecionado.habilidade],
+        ["CURIOSIDADE", selecionado.curiosidade],
+        ["COMPORTAMENTOS", selecionado.comportamentos.join(" / ")],
+      ];
+      for (const [label, valor] of attrs) {
+        if (!valor) continue;
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        ctx.beginPath();
+        ctx.roundRect(30, y, W - 60, 60, 8);
+        ctx.fill();
+        ctx.fillStyle = "#e8b730";
+        ctx.strokeStyle = "#e8b730";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(30, y + 8);
+        ctx.lineTo(30, y + 52);
+        ctx.stroke();
+        ctx.font = "bold 10px system-ui, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(label, 42, y + 18);
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.font = "13px system-ui, sans-serif";
+        ctx.fillText(valor.slice(0, 60), 42, y + 40);
+        y += 70;
+      }
+
+      // Rodapé
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.fillRect(0, H - 30, W, 30);
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.font = "bold 9px system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("BESTIARIO DO SAMUEL", 16, H - 10);
+      ctx.textAlign = "right";
+      const num = (bichos.findIndex(b => b.id === selecionado.id) + 1).toString().padStart(3, "0");
+      ctx.fillText(`#${num}`, W - 16, H - 10);
+
       const link = document.createElement("a");
       link.download = `${selecionado.nome}.png`;
       link.href = canvas.toDataURL("image/png");
@@ -863,14 +936,48 @@ export default function Home() {
       {etapa === "carta" && selecionado && (
         <section>
           <div className="linha-voltar">
-            <button className="link" onClick={() => setEtapa("detalhe")}>‹ {selecionado.nome}</button>
+            <button className="link" onClick={() => setEtapa("detalhe")}>&#8249; {selecionado.nome}</button>
             <button className="link" onClick={() => window.print()}><Printer size={14} /> Imprimir</button>
           </div>
-          <div className="carta-print moldura-carta">
-            <img className="foto" src={imagemDo(selecionado)} alt={selecionado.nome} />
-            <h2 className="cabecalho-bicho">{selecionado.nome}</h2>
-            <p className="subtitulo">{selecionado.corpo}</p>
-            {selecionado.bioma && <p className="subtitulo">{selecionado.bioma}</p>}
+          <div className="carta-print carta-game">
+            <div className="carta-topo">
+              <span className="carta-tipo">{selecionado.bioma ?? "Criatura"}</span>
+            </div>
+            <div className="carta-img-area">
+              <img src={imagemDo(selecionado)} alt={selecionado.nome} className="sprite-img" />
+            </div>
+            <h2 className="carta-nome">{selecionado.nome}</h2>
+            <p className="carta-corpo">{selecionado.corpo}</p>
+            <div className="carta-atributos">
+              {selecionado.origem && (
+                <div className="carta-attr">
+                  <span className="carta-attr-label">Origem</span>
+                  <span className="carta-attr-valor">{selecionado.origem}</span>
+                </div>
+              )}
+              {selecionado.habilidade && (
+                <div className="carta-attr">
+                  <span className="carta-attr-label">Habilidade</span>
+                  <span className="carta-attr-valor">{selecionado.habilidade}</span>
+                </div>
+              )}
+              {selecionado.curiosidade && (
+                <div className="carta-attr">
+                  <span className="carta-attr-label">Curiosidade</span>
+                  <span className="carta-attr-valor">{selecionado.curiosidade}</span>
+                </div>
+              )}
+              {selecionado.comportamentos.length > 0 && (
+                <div className="carta-attr">
+                  <span className="carta-attr-label">Comportamentos</span>
+                  <span className="carta-attr-valor">{selecionado.comportamentos.join(" / ")}</span>
+                </div>
+              )}
+            </div>
+            <div className="carta-rodape">
+              <span>Bestiário do Samuel</span>
+              <span>#{(bichos.findIndex(b => b.id === selecionado.id) + 1).toString().padStart(3, "0")}</span>
+            </div>
           </div>
           <div className="botoes">
             <button onClick={salvarCarta}><Download size={16} /> Salvar Imagem</button>

@@ -5,9 +5,12 @@ export const runtime = "nodejs";
 
 const INSTRUCOES = `Você recebe a foto de um desenho feito por uma criança de 6 a 9 anos e a descrição falada que ela fez do bicho.
 Responda somente com JSON no formato:
-{"versoes":[{"nome":string,"corpo":string,"cores":string[],"comportamentos":string[],"bioma":string,"prompt_sprite":string},{...},{...}]}
+{"versoes":[{"nome":string,"corpo":string,"cores":string[],"comportamentos":string[],"bioma":string,"prompt_sprite":string,"origem":string,"habilidade":string,"curiosidade":string},{...},{...}]}
 Gere exatamente 3 versões em português, fiéis ao desenho e à fala, sem inventar detalhes que não aparecem nos dois.
 "bioma" é o nome curto do lugar onde esse bicho mora, criado a partir da descrição dele (ex.: "Lago de Lava", "Floresta de Cogumelos"). Não escolha de uma lista fixa; cada bicho pode ter um bioma diferente.
+"origem" é uma frase curta sobre de onde o bicho veio ou como nasceu (ex.: "Nasceu de uma faísca dentro de um vulcão adormecido").
+"habilidade" é o poder especial do bicho em uma frase (ex.: "Consegue derreter gelo com um olhar").
+"curiosidade" é um fato divertido sobre o bicho (ex.: "Dorme de ponta-cabeça e ronca bolinhas de fogo").
 "prompt_sprite" deve ser uma descrição detalhada em inglês do bicho para geração de imagem, com pelo menos 30 palavras. Deve começar com "A cute creature" e incluir: formato do corpo, cores específicas, textura, olhos, membros, cauda/asas/apêndices, expressão facial e o bioma como cenário visual de fundo.`;
 
 function limparJSON(texto: string): string {
