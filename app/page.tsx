@@ -81,6 +81,8 @@ const ETAPAS_LOADING = [
 const MENSAGEM_NAO_ENTENDI = "Hum, não entendi, me conta de novo?";
 const MENSAGEM_SERVIDOR = "O bestiário está dormindo, tenta daqui a pouco.";
 // Loading agora usa passos visuais em vez de timer
+const ZOO_LARGURA = 600;
+const ZOO_ALTURA = 560;
 
 let vozAtual: HTMLAudioElement | null = null;
 let abortVoz: AbortController | null = null;
@@ -662,7 +664,7 @@ export default function Home() {
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
     const novas: typeof posicoes = {};
-    const MAPA_W = 600, GRAMA_TOPO = 240, MAPA_H = 560;
+    const MAPA_W = ZOO_LARGURA, GRAMA_TOPO = 240, MAPA_H = ZOO_ALTURA;
     bichos.forEach((b) => {
       if (!posRef.current[b.id]) {
         novas[b.id] = {
@@ -685,7 +687,7 @@ export default function Home() {
   // Loop de animação do zoológico
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
-    const MAPA_W = 600, GRAMA_TOPO = 240, MAPA_H = 560, SPRITE_SZ = 80, DIST_DIALOGO = 100;
+    const MAPA_W = ZOO_LARGURA, GRAMA_TOPO = 240, MAPA_H = ZOO_ALTURA, SPRITE_SZ = 80, DIST_DIALOGO = 100;
 
     const intervalo = setInterval(() => {
       if (dialogoAtivo.current) return;
@@ -864,13 +866,13 @@ export default function Home() {
                 <div
                   key={b.id}
                   className={`zoo-criatura ${emDialogo ? "zoo-parada" : ""}`}
-                  style={{ left: pos.x, top: pos.y }}
+                  style={{ left: `${(pos.x / ZOO_LARGURA) * 100}%`, top: `${(pos.y / ZOO_ALTURA) * 100}%` }}
                   onClick={() => abrirBicho(b)}
                 >
                   <img src={imagemDo(b)} alt={b.nome} className="sprite-img" />
                   <span className="zoo-nome">{b.nome}</span>
                   {emDialogo && dialogoFalas.length > 0 && (
-                    <div className={`zoo-balao ${ehPrimeiroDoPar ? "balao-esq" : "balao-dir"}`}>
+                    <div className={`zoo-balao ${ehPrimeiroDoPar ? "balao-esq" : "balao-dir balao-baixo"}`}>
                       {dialogoFalas
                         .filter((f) => f.autor === b.nome)
                         .slice(0, 2)

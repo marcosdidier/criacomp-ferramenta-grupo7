@@ -1201,6 +1201,18 @@ button.link.perigo:hover {
   left: 75%;
 }
 
+.zoo-balao.balao-baixo {
+  bottom: auto;
+  top: calc(100% + 30px);
+}
+
+.zoo-balao.balao-baixo::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: #fff;
+}
+
 .zoo-balao p {
   margin: 0;
   font-size: 0.72rem;
