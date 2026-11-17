@@ -1,0 +1,136 @@
+{
+  "desenho": "teste_desenho_peixe.jpeg",
+  "fala": "fala_peixe.m4a",
+  "transcricao": "Esse é um peixe que voa, ele se chama bolinho, ele tem asas pequenas e a cauda tem três pontas. Ele mora no lago das bolhas e come algas. Quando ele fica feliz, ele nada bem rápido e faz bolhas com a boca.",
+  "versoes": [
+    {
+      "nome": "Bolinho",
+      "corpo": "Peixe voador de corpo arredondado, olhos grandes, sorriso, asas pequenas e cauda com três pontas.",
+      "cores": [
+        "rosa",
+        "roxo",
+        "laranja",
+        "azul",
+        "branco",
+        "preto"
+      ],
+      "comportamentos": [
+        "Voa com suas asas pequenas.",
+        "Come algas.",
+        "Quando fica feliz, nada bem rápido e faz bolhas com a boca."
+      ],
+      "bioma": "Lago das Bolhas",
+      "prompt_sprite": "Sprite de Bolinho, peixe voador de corpo arredondado rosa, roxo e laranja, olhos grandes e sorriso, asas pequenas e cauda com três pontas; bolhas azuis ao redor."
+    },
+    {
+      "nome": "Bolinho",
+      "corpo": "Peixe voador com corpo redondo, olhos grandes e expressivos, boca sorridente, duas asas pequenas e cauda dividida em três pontas.",
+      "cores": [
+        "rosa",
+        "roxo",
+        "laranja",
+        "azul",
+        "branco",
+        "preto"
+      ],
+      "comportamentos": [
+        "Voa usando as asas pequenas.",
+        "Alimenta-se de algas.",
+        "Feliz, nada bem rápido e solta bolhas pela boca."
+      ],
+      "bioma": "Lago das Bolhas",
+      "prompt_sprite": "Sprite colorido de Bolinho, peixe de corpo redondo rosa, roxo e laranja, olhos grandes, sorriso, asas pequenas e cauda de três pontas, acompanhado por bolhas azuis."
+    },
+    {
+      "nome": "Bolinho",
+      "corpo": "Peixe que voa, com corpo arredondado, olhos grandes, sorriso simpático, asas pequenas e cauda com três pontas.",
+      "cores": [
+        "rosa",
+        "roxo",
+        "laranja",
+        "azul",
+        "branco",
+        "preto"
+      ],
+      "comportamentos": [
+        "Pode voar com suas asas pequenas.",
+        "Come algas.",
+        "Quando está feliz, nada rapidamente e faz bolhas com a boca."
+      ],
+      "bioma": "Lago das Bolhas",
+      "prompt_sprite": "Sprite de um peixe voador chamado Bolinho: corpo arredondado em rosa, roxo e laranja, olhos grandes, boca sorridente, asas pequenas, cauda com três pontas e bolhas azuis."
+    }
+  ],
+  "versaoEscolhida": "Bolinho",
+  "tempos": [
+    {
+      "nome": "transcrever",
+      "segundos": 2.17
+    },
+    {
+      "nome": "interpretar",
+      "segundos": 11.63
+    },
+    {
+      "nome": "historia",
+      "segundos": 2.09
+    },
+    {
+      "nome": "falar",
+      "segundos": 5.73
+    }
+  ],
+  "totalSegundos": 21.63,
+  "tokens": {
+    "transcricao": {
+      "type": "duration",
+      "seconds": 16
+    },
+    "interpretacao": {
+      "input_tokens": 5185,
+      "input_tokens_details": {
+        "cache_write_tokens": 5182,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 5182
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 786,
+      "output_tokens_details": {
+        "reasoning_tokens": 340
+      },
+      "total_tokens": 5971
+    },
+    "historia": {
+      "input_tokens": 237,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        },
+        "cached_tokens": 0
+      },
+      "output_tokens": 94,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 331
+    },
+    "vozCaracteres": 341
+  },
+  "custoUsd": {
+    "transcricao": 0.0012,
+    "interpretacao": 0.0009115,
+    "historia": 0.0000707,
+    "voz": 0
+  },
+  "precosInformados": {
+    "transcricaoMin": 0.0045,
+    "inMtok": 0.1,
+    "outMtok": 0.5,
+    "inCacheMtok": 0.01,
+    "ttsK": 0
+  }
+}
