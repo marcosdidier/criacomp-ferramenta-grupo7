@@ -587,29 +587,6 @@ export default function Home() {
     imagem.src = imagemDo(selecionado);
   }
 
-  async function gerarSprite(bicho: Bicho) {
-    try {
-      const resp = await fetch("/api/sprite", {
-        method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ prompt: bicho.prompt_sprite }),
-      });
-      if (!resp.ok) throw new Error("sprite falhou");
-      const dados = await resp.json();
-      if (dados.erro) throw new Error(dados.erro);
-      const spriteUrl = dados.gif
-        ? `data:image/gif;base64,${dados.gif}`
-        : dados.urls?.[0] ?? null;
-      if (spriteUrl) {
-        atualizarBicho({ ...bicho, sprite: spriteUrl });
-      } else {
-        throw new Error("sem sprite");
-      }
-    } catch {
-      atualizarBicho({ ...bicho, spriteFallback: true });
-    }
-  }
-
   function escolher(versao: Versao) {
     if (!foto) return;
     const novo: Bicho = { ...versao, id: crypto.randomUUID(), foto, transcricao: transcricao ?? undefined };
@@ -624,7 +601,6 @@ export default function Home() {
       setCelebrando(false);
       setEtapa("detalhe");
     }, 2500);
-    gerarSprite(novo);
   }
 
   function abrirBicho(bicho: Bicho) {
