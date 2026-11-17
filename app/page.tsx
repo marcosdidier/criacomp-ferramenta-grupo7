@@ -81,35 +81,64 @@ const ETAPAS_LOADING = [
 const MENSAGEM_NAO_ENTENDI = "Hum, não entendi, me conta de novo?";
 const MENSAGEM_SERVIDOR = "O bestiário está dormindo, tenta daqui a pouco.";
 // Loading agora usa passos visuais em vez de timer
+const ZOO_LARGURA = 600;
+const ZOO_ALTURA = 560;
 
 let vozAtual: HTMLAudioElement | null = null;
 let abortVoz: AbortController | null = null;
+let geracaoVoz = 0;
+let filaVoz: Promise<void> = Promise.resolve();
 
 function pararVoz() {
+  geracaoVoz++;
+  filaVoz = Promise.resolve();
   abortVoz?.abort();
   abortVoz = null;
   vozAtual?.pause();
   vozAtual = null;
 }
 
-async function falar(texto: string) {
-  pararVoz();
+function buscarAudio(texto: string, geracao: number): Promise<string | null> {
   const controller = new AbortController();
   abortVoz = controller;
-  try {
-    const resposta = await fetch("/api/falar", {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ texto }),
-      signal: controller.signal,
-    });
-    if (!resposta.ok) return;
-    const audio = new Audio(URL.createObjectURL(await resposta.blob()));
+  return fetch("/api/falar", {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ texto }),
+    signal: controller.signal,
+  })
+    .then(async (resposta) => {
+      if (!resposta.ok || geracao !== geracaoVoz) return null;
+      return URL.createObjectURL(await resposta.blob());
+    })
+    .catch(() => null);
+}
+
+function tocarAudio(url: string, geracao: number): Promise<void> {
+  return new Promise((resolve) => {
+    if (geracao !== geracaoVoz) return resolve();
+    const audio = new Audio(url);
     vozAtual = audio;
-    await audio.play().catch(() => {});
-  } catch (e) {
-    if (e instanceof DOMException && e.name === "AbortError") return;
-  }
+    audio.onended = () => resolve();
+    audio.onerror = () => resolve();
+    audio.play().catch(() => resolve());
+  });
+}
+
+async function falar(texto: string) {
+  pararVoz();
+  const geracao = geracaoVoz;
+  const url = await buscarAudio(texto, geracao);
+  if (url) await tocarAudio(url, geracao);
+}
+
+function falarNaFila(texto: string) {
+  const geracao = geracaoVoz;
+  const pronto = buscarAudio(texto, geracao);
+  filaVoz = filaVoz.then(async () => {
+    const url = await pronto;
+    if (url) await tocarAudio(url, geracao);
+  });
 }
 
 const SLIDES_TUTORIAL = [
@@ -258,7 +287,7 @@ export default function Home() {
       if (!foto) throw new Error("sem foto");
 
       // Passo 0: Transcrição
-      falar(ETAPAS_LOADING[0]);
+      falarNaFila(ETAPAS_LOADING[0]);
       const form = new FormData();
       // Extensão correta por mime type (iOS grava mp4, Android webm)
       const ext = audio.type.includes("mp4") ? "mp4" : audio.type.includes("ogg") ? "ogg" : "webm";
@@ -279,7 +308,7 @@ export default function Home() {
 
       // Passo 1: Interpretação
       setPassoLoading(1);
-      falar(ETAPAS_LOADING[1]);
+      falarNaFila(ETAPAS_LOADING[1]);
 
       // Comprimir foto se ainda for grande (safety net)
       let fotoEnvio = foto;
@@ -314,11 +343,11 @@ export default function Home() {
 
       // Passo 2: Inventando versões
       setPassoLoading(2);
-      falar(ETAPAS_LOADING[2]);
+      falarNaFila(ETAPAS_LOADING[2]);
 
       // Passo 3: Gerando sprites (bloqueia até todas ficarem prontas)
       setPassoLoading(3);
-      falar(ETAPAS_LOADING[3]);
+      falarNaFila(ETAPAS_LOADING[3]);
       const versoesComSprite = await Promise.all(
         (dados.versoes as Versao[]).map(async (v) => {
           try {
@@ -338,13 +367,13 @@ export default function Home() {
 
       // Passo 4: Pronto
       setPassoLoading(4);
-      falar(ETAPAS_LOADING[4]);
+      falarNaFila(ETAPAS_LOADING[4]);
       setTranscricao(texto);
       setVersoes(versoesComSprite);
 
       // Pequena pausa dramática antes de mostrar
       await new Promise((r) => setTimeout(r, 800));
-      falar("Escolhe o seu favorito!");
+      falarNaFila("Escolhe o seu favorito!");
       setEtapa("escolha");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "desconhecido";
@@ -635,7 +664,7 @@ export default function Home() {
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
     const novas: typeof posicoes = {};
-    const MAPA_W = 600, GRAMA_TOPO = 240, MAPA_H = 560;
+    const MAPA_W = ZOO_LARGURA, GRAMA_TOPO = 240, MAPA_H = ZOO_ALTURA;
     bichos.forEach((b) => {
       if (!posRef.current[b.id]) {
         novas[b.id] = {
@@ -658,7 +687,7 @@ export default function Home() {
   // Loop de animação do zoológico
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
-    const MAPA_W = 600, GRAMA_TOPO = 240, MAPA_H = 560, SPRITE_SZ = 80, DIST_DIALOGO = 100;
+    const MAPA_W = ZOO_LARGURA, GRAMA_TOPO = 240, MAPA_H = ZOO_ALTURA, SPRITE_SZ = 80, DIST_DIALOGO = 100;
 
     const intervalo = setInterval(() => {
       if (dialogoAtivo.current) return;
@@ -837,13 +866,13 @@ export default function Home() {
                 <div
                   key={b.id}
                   className={`zoo-criatura ${emDialogo ? "zoo-parada" : ""}`}
-                  style={{ left: pos.x, top: pos.y }}
+                  style={{ left: `${(pos.x / ZOO_LARGURA) * 100}%`, top: `${(pos.y / ZOO_ALTURA) * 100}%` }}
                   onClick={() => abrirBicho(b)}
                 >
                   <img src={imagemDo(b)} alt={b.nome} className="sprite-img" />
                   <span className="zoo-nome">{b.nome}</span>
                   {emDialogo && dialogoFalas.length > 0 && (
-                    <div className={`zoo-balao ${ehPrimeiroDoPar ? "balao-esq" : "balao-dir"}`}>
+                    <div className={`zoo-balao ${ehPrimeiroDoPar ? "balao-esq" : "balao-dir balao-baixo"}`}>
                       {dialogoFalas
                         .filter((f) => f.autor === b.nome)
                         .slice(0, 2)
