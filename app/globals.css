@@ -814,6 +814,11 @@ button.link.perigo:hover {
   image-rendering: pixelated;
 }
 
+.zoo-criatura .sprite-img {
+  width: 100%;
+  height: auto;
+}
+
 /* ── Animações do zoológico ───────────────────────── */
 
 @keyframes flutua {
@@ -1110,6 +1115,7 @@ button.link.perigo:hover {
 
 .zoo-criatura {
   position: absolute;
+  width: 16%;
   display: flex;
   flex-direction: column;
   align-items: center;

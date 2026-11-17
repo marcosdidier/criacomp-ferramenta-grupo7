@@ -81,8 +81,6 @@ const ETAPAS_LOADING = [
 const MENSAGEM_NAO_ENTENDI = "Hum, não entendi, me conta de novo?";
 const MENSAGEM_SERVIDOR = "O bestiário está dormindo, tenta daqui a pouco.";
 // Loading agora usa passos visuais em vez de timer
-const ZOO_LARGURA = 600;
-const ZOO_ALTURA = 560;
 
 let vozAtual: HTMLAudioElement | null = null;
 let abortVoz: AbortController | null = null;
@@ -640,14 +638,14 @@ export default function Home() {
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
     const novas: typeof posicoes = {};
-    const MAPA_W = ZOO_LARGURA, GRAMA_TOPO = 240, MAPA_H = ZOO_ALTURA;
+    const GRAMA_TOPO = 40, SPRITE_W = 16, SPRITE_H = 19;
     bichos.forEach((b) => {
       if (!posRef.current[b.id]) {
         novas[b.id] = {
-          x: 20 + Math.random() * (MAPA_W - 100),
-          y: GRAMA_TOPO + Math.random() * (MAPA_H - GRAMA_TOPO - 80),
-          dx: (Math.random() - 0.5) * 1.2,
-          dy: (Math.random() - 0.5) * 1.2,
+          x: 2 + Math.random() * (100 - SPRITE_W - 4),
+          y: GRAMA_TOPO + Math.random() * (100 - SPRITE_H - GRAMA_TOPO),
+          dx: (Math.random() - 0.5) * 0.3,
+          dy: (Math.random() - 0.5) * 0.3,
         };
       } else {
         novas[b.id] = posRef.current[b.id];
@@ -663,7 +661,7 @@ export default function Home() {
   // Loop de animação do zoológico
   useEffect(() => {
     if (etapa !== "zoologico" || bichos.length === 0) return;
-    const MAPA_W = ZOO_LARGURA, GRAMA_TOPO = 240, MAPA_H = ZOO_ALTURA, SPRITE_SZ = 80, DIST_DIALOGO = 100;
+    const GRAMA_TOPO = 40, SPRITE_W = 16, SPRITE_H = 19, DIST_DIALOGO = 18;
 
     const intervalo = setInterval(() => {
       if (dialogoAtivo.current) return;
@@ -677,10 +675,10 @@ export default function Home() {
           let ny = p.y + p.dy;
           let ndx = p.dx;
           let ndy = p.dy;
-          if (nx < 0 || nx > MAPA_W - SPRITE_SZ) ndx = -ndx;
-          if (ny < GRAMA_TOPO || ny > MAPA_H - SPRITE_SZ) ndy = -ndy;
-          nx = Math.max(0, Math.min(MAPA_W - SPRITE_SZ, nx));
-          ny = Math.max(GRAMA_TOPO, Math.min(MAPA_H - SPRITE_SZ, ny));
+          if (nx < 0 || nx > 100 - SPRITE_W) ndx = -ndx;
+          if (ny < GRAMA_TOPO || ny > 100 - SPRITE_H) ndy = -ndy;
+          nx = Math.max(0, Math.min(100 - SPRITE_W, nx));
+          ny = Math.max(GRAMA_TOPO, Math.min(100 - SPRITE_H, ny));
           next[b.id] = { x: nx, y: ny, dx: ndx, dy: ndy };
         }
 
@@ -842,7 +840,7 @@ export default function Home() {
                 <div
                   key={b.id}
                   className={`zoo-criatura ${emDialogo ? "zoo-parada" : ""}`}
-                  style={{ left: `${(pos.x / ZOO_LARGURA) * 100}%`, top: `${(pos.y / ZOO_ALTURA) * 100}%` }}
+                  style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                   onClick={() => abrirBicho(b)}
                 >
                   <img src={imagemDo(b)} alt={b.nome} className="sprite-img" />
