@@ -154,4 +154,4 @@ Como lidamos: trocamos a saída principal por zoológico 2D e carta, que são te
 
 ## Anexos
 - Medições da rodada do peixe e do lobo: `docs/medicoes/peixe/` e `docs/medicoes/lobo/` no repositório.
-- Planilha de custo e tempo (3 abas: medições, estimativa por criatura e tempo do deploy): planilha-custo-tempo-bestiario-samuel.xlsx [colocar o link do Drive ou do Sheets após o upload]
+- Planilha de custo e tempo (3 abas: medições, estimativa por criatura e tempo do deploy): planilha-custo-tempo-bestiario-samuel.xlsx https://github.com/marcosdidier/criacomp-ferramenta-grupo7/blob/main/docs/entrega-final/planilha-custo-tempo-bestiario-samuel.xlsx
