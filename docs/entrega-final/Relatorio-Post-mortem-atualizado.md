@@ -1,8 +1,6 @@
 # Relatório Post-mortem: O bestiário do Samuel (Grupo 7)
 Projeto Ferramenta · Criatividade Computacional 2026.2 (IF866, CIn-UFPE)
 
-Campos entre colchetes precisam de confirmação ou preenchimento pelo grupo.
-
 ---
 
 ## 1. Links
@@ -148,7 +146,9 @@ Como lidamos: trocamos a saída principal por zoológico 2D e carta, que são te
 - **Resultado:** peixe (Bolinho): 2, 2, 2 e 2, total 8 de 8, geração boa.
 
 ### Como as métricas mudaram entre versões
-- Na versão com DALL-E 3 e Retro Diffusion, o custo por criatura era maior, e a animação dependia de um serviço sem saldo. Na versão final, o custo por criatura caiu para cerca de US$ 0,17 e o pipeline de imagem usa uma única chave.
+- **Versão anterior (DALL-E 3 e Retro Diffusion):** não medimos o custo por criatura. A comparação é uma estimativa, feita a partir dos preços de tabela: o DALL-E 3 e a Retro Diffusion custariam cerca de US$ 0,20 por sprite, e a Retro Diffusion dependia de saldo, que acabou.
+- **Versão final (gpt-image-1-mini):** custo medido por criatura em torno de US$ 0,17 no deploy, com as imagens incluídas. O tempo, de cerca de 45 a 50 s, também foi medido no deploy, mas não temos a mesma medição da versão anterior para comparar.
+- **Conclusão:** a mudança de modelo reduziu o custo estimado e removeu a dependência de um segundo serviço de imagem.
 
 ---
 
