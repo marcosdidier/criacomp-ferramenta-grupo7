@@ -6,7 +6,7 @@ Projeto Ferramenta · Criatividade Computacional 2026.2 (IF866, CIn-UFPE)
 ## 1. Links
 
 - **Projeto em deploy:** https://criacomp-ferramenta-grupo7.vercel.app
-- **Código-fonte:** https://github.com/marcosdidier/criacomp-ferramenta-grupo7 (repositório privado)
+- **Código-fonte:** https://github.com/marcosdidier/criacomp-ferramenta-grupo7 (repositório público)
 - **Instruções de uso:**
   1. Abra o link no tablet ou no computador e permita o acesso à câmera e ao microfone.
   2. Fotografe um desenho feito no papel.
